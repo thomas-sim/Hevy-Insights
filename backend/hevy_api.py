@@ -200,12 +200,12 @@ class HevyClient:
             logging.error(f"Unexpected error fetching user account: {e}")
             raise HevyError(f"Unexpected error occurred: {e}")
 
-    def get_workouts(self, username: Optional[str] = None, offset: int = 0) -> dict:
+    def get_workouts(self, username: str, offset: int = 0) -> dict:
         """
         Fetch paginated workouts from Hevy API.
 
         Args:
-            username: Optional username to filter workouts
+            username: Username to filter workouts
             offset: Pagination offset (increments by 5: 0, 5, 10, 15, ...)
 
         Returns:
