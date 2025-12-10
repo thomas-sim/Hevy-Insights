@@ -160,6 +160,10 @@ onMounted(async () => {
             <div class="stat"><strong>{{ totalSets(workout) }}</strong><span>Total Sets</span></div>
           </div>
 
+          <div v-if="workout.description" class="workout-description">
+            <em>{{ workout.description }}</em>
+          </div>
+
           <!--  Exercises List  -->
           <div class="exercises">
             <h3>Exercises</h3>
@@ -244,6 +248,8 @@ onMounted(async () => {
   .stat { display: flex; flex-direction: column; gap: 0.15rem; }
   .stat strong { color: var(--text-primary); font-size: 1rem; }
   .stat span { color: var(--text-secondary); font-size: 0.8rem; }
+
+  .workout-description { margin: 0.5rem 0 1rem; color: var(--text-secondary); }
 
   .exercises h3 { margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem; }
   .exercise { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
