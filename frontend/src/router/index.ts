@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "../views/Login.vue";
 import Dashboard from "../views/Dashboard.vue";
-import Workouts from "../views/Workouts.vue";
+import WorkoutsCard from "../views/Workouts_Card.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,9 +22,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/workouts",
-      name: "Workouts",
-      component: Workouts,
+      path: "/workouts-card",
+      name: "Workouts_Card",
+      component: WorkoutsCard,
       meta: { requiresAuth: true },
     },
   ],
