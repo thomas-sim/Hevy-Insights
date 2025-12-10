@@ -152,13 +152,14 @@ async def get_workouts(
     
     - **offset**: Pagination offset (0, 5, 10, 15, ...)
     - **username**: Username filter
-    
+
     Requires auth-token header.
     """
     token = auth_token
     
     try:
         client = HevyClient(token)
+        
         workouts = client.get_workouts(username=username, offset=offset)
         
         return workouts
@@ -179,6 +180,7 @@ async def health():
     """
     return HealthResponse(status="healthy")
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info")
