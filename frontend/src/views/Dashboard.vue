@@ -215,6 +215,18 @@ const avgVolume = computed(() =>
   totalWorkouts.value > 0 ? Math.round(totalVolume.value / totalWorkouts.value) : 0
 );
 
+// Total hours trained across all workouts
+const totalMinutesAll = computed(() => {
+  let mins = 0;
+  for (const w of workouts.value) {
+    const start = w.start_time || 0;
+    const end = w.end_time || start;
+    mins += Math.max(0, Math.floor((end - start) / 60));
+  }
+  return mins;
+});
+const totalHoursAll = computed(() => Number((totalMinutesAll.value / 60).toFixed(2)));
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -317,6 +329,14 @@ onMounted(fetchData);
           <div class="stat-content">
             <div class="stat-value">{{ avgVolume.toLocaleString() }}</div>
             <div class="stat-label">Avg Volume (kg)</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ totalHoursAll }}</div>
+            <div class="stat-label">Total Hours Trained</div>
           </div>
         </div>
 
