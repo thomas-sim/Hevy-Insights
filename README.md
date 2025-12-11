@@ -13,8 +13,226 @@
 > [!NOTE]
 > This is a hobby project. Feel free to create issues and contribute.
 
-# Overview
+# Overview <!-- omit from toc -->
 
-Hevy Insights is a dynamic web application that provides insights and analytics for users of the Hevy fitness app. It visualizes workout data from the Hevy app in a clean dashboard so that you can always keep track of your progress!
+Hevy Insights is a dynamic web application that provides insights and analytics of your workouts and exercises. It visualizes workout data from the Hevy app in a clean dashboard so that you can always keep track of your progress!
 
-In the Hevy app you can often only see your stats and progress for a limited time (mostly 3 months) or with a paid PRO membership. Hevy Insights allows you to log in with your Hevy credentials and fetch your workout data directly from Hevy's API, providing you with detailed visualizations and historical data up to the date of your account creation.
+In the Hevy app you can only see your stats and progress up to 3 months for free, otherwise you need the paid Hevy PRO membership.
+Hevy Insights allows you to log in with your Hevy credentials and fetch your workout data directly from Hevy's API, providing you with detailed visualizations and historical data up to the date of your account creation - no PRO membership required!
+
+# Table of Contents <!-- omit from toc -->
+
+- [Features](#features)
+- [Usage](#usage)
+  - [Hosted Online](#hosted-online)
+  - [Local Setup](#local-setup)
+- [Future Goals](#future-goals)
+- [Technical Documentation](#technical-documentation)
+  - [Project Structure](#project-structure)
+    - [File Descriptions](#file-descriptions)
+      - [Backend Files](#backend-files)
+      - [Frontend Files](#frontend-files)
+    - [Documentation \& Configuration](#documentation--configuration)
+  - [High-Level-Flow](#high-level-flow)
+    - [Authentication Flow](#authentication-flow)
+- [Development](#development)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+- [Legal Disclaimer](#legal-disclaimer)
+- [License](#license)
+
+# Features
+
+- **Authentication**: Login with Hevy credentials (no Hevy PRO membership required!). Credentials are stored in your browser's local storage **only**.
+- **Dashboard**: Interactive charts and statistics of your workouts, including volume, muscle distribution and hours trained.
+- **Workout History**: Workout logs with detailed exercise information up to the date of account creation - card or list design.
+
+# Usage
+
+> [!WARNING]
+> Hevy Insights is not yet published or hosted online. You need to run the backend and frontend servers locally on your machine by following the instructions below. It'll will be available online in the future.
+
+## Hosted Online
+
+> Hevy Insights will be hosted online in the future. Stay tuned for updates!
+
+## Local Setup
+
+Clone/download the repository and follow these steps:
+
+0. Install the backend and frontend dependencies as described in the [Development](#development) section below.
+
+1. **Start the backend** (Terminal 1):
+
+   `python backend/fastapi_server.py`
+
+2. **Start the frontend** (Terminal 2):
+
+   `cd frontend; npm run dev`
+
+3. **Open your browser** and navigate to `http://localhost:5173`
+
+4. **Login** with your Hevy username/email and password
+
+---
+
+# Future Goals
+
+- Display time on Workout cards like "1h 15m" instead of "75 minutes"
+- Limit Workout cards grid to 3 rows x 2 columns instead of 3x3
+- Translations for other languages
+- Public Swagger docs for Hevy API endpoints
+- Settings page where the user can select translations and other preferences (date format, theme, etc.)
+
+---
+
+# Technical Documentation
+
+> [!NOTE]
+> As of 11.12.2025, **v1.0.0**
+
+## Project Structure
+
+```bash
+hevy-insights/
+├── backend/                   # Backend Components
+│   ├── fastapi_server.py      # FastAPI server with REST endpoints
+│   ├── hevy_api.py            # Hevy API module
+│   └── requirements.txt       # Python backend dependencies
+└── frontend/                  # Frontend Components
+    ├── public/                # Static assets
+    ├── src/                   # Vue 3 TypeScript application
+    │   ├── router/            # Vue Router configuration with auth guards
+    │   │   └── index.ts       # Router entry point
+    │   ├── services/          # API communication layer (Axios)
+    │   │   ├── api.ts         # Axios instance and API functions
+    │   ├── stores/            # Pinia store for state management
+    │   │   └── hevy_cache.ts  # Hevy data caching
+    │   ├── views/             # Page components (Login, Dashboard, Workouts)
+    │   │   ├── Dashboard.vue  # Dashboard page
+    │   │   ├── Login.vue      # Login page
+    │   │   ├── Workouts_Card.vue   # Workouts page (card design)
+    │   │   └── Workouts_List.vue   # Workouts page (list design)
+    │   ├── App.vue            # Root Vue component
+    │   ├── main.ts            # Vue app entry point
+    │   └── style.css          # Global styles
+    ├── index.html             # HTML entry point
+    ├── package-lock.json      # npm package lock file
+    ├── package.json           # Node.js dependencies
+    ├── tsconfig.app.json      # TypeScript configuration for the app
+    ├── tsconfig.json          # TypeScript configuration
+    ├── tsconfig.node.json     # TypeScript configuration for Node.js
+    └── vite.config.ts         # Vite build configuration
+```
+
+### File Descriptions
+
+#### Backend Files
+
+- **`fastapi_server.py`**: FastAPI REST API server with multiple endpoints. Uses Pydantic models for request/response validation and provides auto-generated API docs at `/api/docs`.
+- **`hevy_api.py`**: Hevy API module with `HevyClient` class, `HevyConfig` for configuration, and `HevyError` exception. Handles API requests/responses against the official Hevy API.
+- **`requirements.txt`**: Python backend package dependencies.
+
+#### Frontend Files
+
+- **`src/router/index.ts`**: Vue Router configuration with navigation guards to protect authenticated routes.
+- **`src/services/api.ts`**: Centralized API communication layer using Axios with automatic auth token injection against the Hevy Insights API backend.
+- **`src/stores/hevy_cache.ts`**: Pinia store for caching Hevy API data with a 5-minute TTL.
+- **`src/views/Dashboard.vue`**: Main dashboard with Chart.js visualizations (volume over time, muscle group distribution) and workout metrics.
+- **`src/views/Login.vue`**: Login page with form for Hevy credentials, stores auth token in localStorage.
+- **`src/views/Workouts_Card.vue`**: Paginated workout history browser with detailed exercise information (sets, reps, weight, RPE).
+- **`src/views/Workouts_List.vue`**: Alternative workout history browser in list design.
+- **`src/App.vue`**: Root component with navigation bar and router view.
+- **`src/main.ts`**: Vue application initialization and router setup.
+- **`src/style.css`**: Global styles for the application.
+- **`index.html`**: HTML entry point.
+- **`package-lock.json`**: npm package lock file.
+- **`package.json`**: Node.js dependencies (Vue 3, Vue Router, Axios, Chart.js, TypeScript, Vite).
+
+### Documentation & Configuration
+
+- **`swagger/swagger.yaml`**: OpenAPI specification documenting all official Hevy API endpoints, request/response schemas, and authentication requirements.
+- **`.markdownlint.json`**: Configuration for Markdown linting rules. VS Code extension ID: [DavidAnson.vscode-markdownlint](https://marketplace.visualstudio.com/items?itemName=DavidAnson.vscode-markdownlint)
+## High-Level-Flow
+
+- **index.html**: Browser loads this HTML document first. It defines the root node `<div id="app"></div>` and includes `<script type="module" src="/src/main.ts">`.
+- **main.ts**: Entry script runs. Vite serves ES modules and applies HMR in dev. We `createApp(App)`, install `Pinia` and the `Router`, then `mount("#app")`.
+- **App.vue**: Root component renders the global shell (fixed sidebar + main). On mount and after each route change it checks `localStorage` for `hevy_auth_token` to toggle sidebar visibility and protect routes.
+- **Router**: Resolves the current URL (`/login`, `/dashboard`, `/workouts-card`, `/workouts-list`) and renders the matched view inside `<router-view />`. Auth guards prevent accessing protected routes without a token.
+- **View Components**: The matched page component (`Login.vue`, `Dashboard.vue`, `Workouts_Card.vue`, `Workouts_List.vue`) runs `setup()` and lifecycle hooks (`onMounted`).
+   - **Login.vue**: Handles credential input and calls `authService.login()`. On success, stores `auth_token` in `localStorage` and redirects to `/dashboard`.
+   - **Dashboard.vue**: Displays various statistics and charts about the user's workouts.
+   - **Workouts_Card.vue**: Paginated card view of workouts with stats, description, per-exercise details (sets, reps, weight, RPE) and PR summaries on expanded exercises.
+   - **Workouts_List.vue**: Alternative expandable list view with of the user's workouts.
+- **Pinia Store** (*frontend/src/stores/hevy_cache.ts*): Centralized state with 5‑minute caching for workouts (`workoutsLastFetched`). Exposes actions `fetchUserAccount()`, `fetchWorkouts(force)` and getters like `username`, `hasWorkouts`. Prevents redundant API calls when navigating.
+- **Axios Service** (*frontend/src/services/api.ts*): Configures base URL and injects the `auth-token` header via interceptors. All frontend API calls to the backend go through these typed helpers.
+- **Backend** (FastAPI): Serves `/api` endpoints. Validates `auth-token` and proxies requests to the official Hevy API. Frontend receives JSON responses and Vue reactivity updates the UI.
+
+### Authentication Flow
+
+1. User logs in via `/api/login` endpoint with Hevy credentials
+2. Backend receives `auth_token` from Hevy API
+3. Frontend stores token in localStorage
+4. Subsequent API requests include token in `auth-token` header
+5. Backend uses token to authenticate requests to Hevy API  
+
+# Development
+
+> [!IMPORTANT]
+> If you are interested in contributing to the development of Hevy Insights, please create an issue and submit a pull request.
+> For other inquiries, feel free to contact me -> [casudo](https://github.com/casudo)
+
+Clone/download the repository and follow the steps below.
+
+## Backend Setup
+
+1. Optional, but recommended: Create a virtual environment and activate it:
+
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+2. Install backend dependencies:
+
+   ```bash
+   pip install -r backend\requirements.txt
+   ```
+
+3. Run the FastAPI backend:
+
+   ```bash
+   python backend/fastapi_server.py
+   ```
+
+   FastAPI endpoint documentation: `http://localhost:5000/api/docs`
+
+## Frontend Setup
+
+**Prerequisites**:
+
+- Install [Node.js](https://nodejs.org/) (v24 or higher)
+- Install [npm](https://www.npmjs.com/get-npm) (comes with Node.js, v11 or higher)
+
+1. Navigate to frontend directory and install dependencies:
+
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+2. Run the Vue development server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Frontend will run on `http://localhost:5173`
+
+# Legal Disclaimer
+
+This project is not affiliated with or endorsed by Hevy or its parent company. It is a third-party application developed for personal use and educational purposes only. Users are responsible for complying with Hevy's terms of service when using this application. The developer assumes no liability for any issues arising from the use of this software.
+
+# License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
