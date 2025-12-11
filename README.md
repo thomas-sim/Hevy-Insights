@@ -153,6 +153,8 @@ hevy-insights/
 
 - **`swagger/swagger.yaml`**: OpenAPI specification documenting all official Hevy API endpoints, request/response schemas, and authentication requirements.
 - **`.markdownlint.json`**: Configuration for Markdown linting rules. VS Code extension ID: [DavidAnson.vscode-markdownlint](https://marketplace.visualstudio.com/items?itemName=DavidAnson.vscode-markdownlint)
+- **`ruff.toml`**: Configuration file for Ruff, Python linter and formatter.
+
 ## High-Level-Flow
 
 - **index.html**: Browser loads this HTML document first. It defines the root node `<div id="app"></div>` and includes `<script type="module" src="/src/main.ts">`.
