@@ -297,6 +297,17 @@ onMounted(async () => {
   .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .page-info { color: var(--text-secondary); }
 
+  /* Mobile Responsive */
   @media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    .workouts { padding: 1rem; }
+    .header-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .grid { grid-template-columns: 1fr; }
+    .card { padding: 0.75rem; }
+    .card-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .stats-row { flex-wrap: wrap; gap: 0.75rem; }
+    .stat strong { font-size: 0.95rem; }
+    .sets-table { display: block; overflow-x: auto; }
+    .sets-table table { min-width: 420px; }
+  }
 </style>
