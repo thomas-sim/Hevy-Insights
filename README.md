@@ -68,7 +68,6 @@ Hevy Insights allows you to log in with your Hevy credentials and fetch your wor
 *Workouts Page - List Design*
 ![Workouts Page - List Design](/readme_images/workout_page_list.png)
 
-
 # Usage
 
 > [!WARNING]
@@ -105,6 +104,7 @@ Clone/download the repository and follow these steps:
 - Translations for other languages
 - Public Swagger docs for Hevy API endpoints
 - Settings page where the user can select translations and other preferences (date format, theme, etc.)
+- Better logging
 
 ---
 
