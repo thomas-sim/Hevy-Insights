@@ -75,7 +75,7 @@ You can either use Hevy Insights online or run it locally on your machine.
 
 ## Hosted Online
 
-Navigate to the hosted version of Hevy Insights at: [https://hevy.kida.one](https://hevy.casudo.dev)
+Navigate to the hosted version of Hevy Insights at: [https://hevy.kida.one](https://hevy.kida.one)
 The latest version is always hosted there.
 
 > [!IMPORTANT]
