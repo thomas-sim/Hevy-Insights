@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { authService } from "./services/api";
 
 const router = useRouter();
 const route = useRoute();
 const showNav = ref(false);
-const appVersion = "v1.0.0"; // Update version as needed
+const appVersion = "v1.0.1"; // Update version as needed
+const isMobileSidebarOpen = ref(false);
+const showTopbar = ref(true);
 
-const checkAuth = () => {
-  const token = localStorage.getItem("hevy_auth_token");
-  showNav.value = !!token && route.path !== "/login"; // Show nav if token exists AND not on login page
+const updateNavVisibility = () => {
+  // Show nav/topbar on all routes except login
+  showNav.value = route.path !== "/login";
 };
 
 const logout = () => {
@@ -19,11 +21,32 @@ const logout = () => {
 };
 
 // Check auth status on mount to DOM (Document Object Model)
-onMounted(checkAuth);
+onMounted(() => {
+  updateNavVisibility();
+  let lastY = window.scrollY;
+  const onScroll = () => {
+    const y = window.scrollY;
+    // Show topbar when scrolling up or near top; hide on scroll down
+    showTopbar.value = y < 10 || y < lastY;
+    lastY = y;
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+});
 
 // Watch for route changes to update nav visibility
 router.afterEach(() => {
-  checkAuth();
+  updateNavVisibility();
+  isMobileSidebarOpen.value = false;
+});
+
+// Lock page scroll when sidebar is open
+watch(isMobileSidebarOpen, (open) => {
+  const cls = "sidebar-open";
+  if (open) {
+    document.body.classList.add(cls);
+  } else {
+    document.body.classList.remove(cls);
+  }
 });
 </script>
 
@@ -31,8 +54,16 @@ router.afterEach(() => {
 
 <template>
   <div id="app">
+    <!-- Mobile Top Bar -->
+    <header v-if="showNav && showTopbar" class="topbar">
+      <button class="menu-btn" @click="isMobileSidebarOpen = !isMobileSidebarOpen">☰</button>
+      <router-link to="/dashboard" class="topbar-brand">
+        <span class="brand-text">Hevy Insights</span>
+      </router-link>
+    </header>
+    
     <!-- Sidebar Navigation -->
-    <aside v-if="showNav" class="sidebar">
+    <aside v-if="showNav" :class="['sidebar', { 'mobile-open': isMobileSidebarOpen }]">
       <div class="sidebar-header">
         <router-link to="/dashboard" class="sidebar-brand">
           <span class="brand-icon">💪</span>
@@ -64,8 +95,10 @@ router.afterEach(() => {
       </div>
     </aside>
 
+    <!-- Backdrop for mobile to close sidebar -->
+    <div v-if="isMobileSidebarOpen" class="backdrop" @click="isMobileSidebarOpen = false"></div>
     <!-- Main Content Area -->
-    <main :class="{ 'with-sidebar': showNav, 'without-sidebar': !showNav }">
+    <main :class="{ 'with-sidebar': showNav, 'without-sidebar': !showNav, 'dimmed': isMobileSidebarOpen }">
       <router-view />
     </main>
   </div>
@@ -92,6 +125,7 @@ router.afterEach(() => {
   --border-color: #2b3553;
   --shadow: rgba(0, 0, 0, 0.3);
   --sidebar-width: 260px;
+  --topbar-height: 56px;
 }
 
 body {
@@ -103,10 +137,24 @@ body {
   overflow-x: hidden;
 }
 
+/* Prevent any scrolling when sidebar is open */
+body.sidebar-open {
+  height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
 #app {
   min-height: 100vh;
   display: flex;
   background: var(--bg-primary);
+  flex-direction: row; /* desktop: sidebar + content side-by-side */
+}
+
+/* Hide the mobile topbar on desktop to avoid blank space */
+.topbar {
+  display: none;
 }
 
 /* Sidebar Styles */
@@ -255,6 +303,38 @@ main.without-sidebar {
   :root {
     --sidebar-width: 220px;
   }
+  /* Mobile: stack topbar above content */
+  #app { flex-direction: column; }
+  .topbar {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.75rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1200;
+    transition: transform 0.2s ease;
+  }
+  .menu-btn {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--emerald-primary);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 6px;
+    padding: 0.5rem 0.6rem;
+    font-size: 1rem;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 600; }
+  
+  .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; top: var(--topbar-height); height: calc(100vh - var(--topbar-height)); bottom: auto; overflow-y: auto; }
+  .sidebar.mobile-open { transform: translateX(0); }
+  
+  /* Attach content directly under top bar without extra spacing */
+  main.with-sidebar { margin-left: 0; width: 100%; }
+  main.dimmed::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900; }
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 950; }
   
   .sidebar {
     transform: translateX(-100%);
