@@ -28,6 +28,14 @@ ChartJS.register(
 const store = useHevyCache();
 const loading = computed(() => store.isLoadingWorkouts || store.isLoadingUser);
 
+// Get theme colors from CSS variables
+const primaryColor = computed(() => {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#10b981';
+});
+const secondaryColor = computed(() => {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || '#06b6d4';
+});
+
 // Time range filter per exercise
 type Range = "all" | "1w" | "1m" | "3m" | "6m" | "12m";
 const rangeByExercise = ref<Record<string, Range>>({});
@@ -192,8 +200,8 @@ function getWeightVsRepsChartData(ex: any) {
       {
         label: "Weight vs Reps",
         data: scatterData,
-        backgroundColor: "#10b981",
-        borderColor: "#10b981",
+        backgroundColor: primaryColor.value,
+        borderColor: primaryColor.value,
         pointRadius: 6,
         pointHoverRadius: 8,
       },
@@ -215,8 +223,8 @@ function getMaxWeightOverTimeChartData(ex: any) {
       {
         label: "Max Weight (kg)",
         data: weightData,
-        backgroundColor: "rgba(16, 185, 129, 0.2)",
-        borderColor: "#10b981",
+        backgroundColor: primaryColor.value + '33',
+        borderColor: primaryColor.value,
         borderWidth: 2,
         tension: 0.4,
         fill: true,
@@ -239,8 +247,8 @@ function getAvgVolumePerSetChartData(ex: any) {
       {
         label: "Avg Volume per Set (kg)",
         data: avgVolData,
-        backgroundColor: "rgba(6, 182, 212, 0.2)",
-        borderColor: "#06b6d4",
+        backgroundColor: secondaryColor.value + '33',
+        borderColor: secondaryColor.value,
         borderWidth: 2,
         tension: 0.4,
         fill: true,
@@ -263,8 +271,8 @@ function getVolumeChartData(ex: any) {
       {
         label: "Volume (kg)",
         data: volData,
-        backgroundColor: "rgba(16, 185, 129, 0.2)",
-        borderColor: "#10b981",
+        backgroundColor: primaryColor.value + '33',
+        borderColor: primaryColor.value,
         borderWidth: 2,
       },
     ],
@@ -488,7 +496,7 @@ const barChartOptions = {
 .search-input { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; min-width: 240px; }
 
 .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; gap: 1rem; }
-.loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(16,185,129,0.25); border-top-color: var(--emerald-primary); border-radius: 50%; animation: spin 0.9s linear infinite; }
+.loading-spinner { width: 48px; height: 48px; border: 4px solid color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent); border-top-color: var(--color-primary, #10b981); border-radius: 50%; animation: spin 0.9s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .loading-container p { color: var(--text-secondary); font-size: 1.1rem; }
 

@@ -160,7 +160,8 @@ const weeks = computed(() => {
 });
 
 const cellColor = (count: number) => {
-  return count > 0 ? "#68d391" : "var(--bg-secondary)"; // single color for days with workouts
+  const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#10b981';
+  return count > 0 ? primary : "var(--bg-secondary)"; // single color for days with workouts
 };
 
 const scrollToDay = async (day: string) => {
@@ -337,7 +338,7 @@ onMounted(async () => { await store.fetchWorkouts(); });
 
 
   .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; gap: 1rem; }
-  .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(16,185,129,0.25); border-top-color: var(--emerald-primary); border-radius: 50%; animation: spin 0.9s linear infinite; }
+  .loading-spinner { width: 48px; height: 48px; border: 4px solid color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent); border-top-color: var(--color-primary, #10b981); border-radius: 50%; animation: spin 0.9s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .loading-container p { color: var(--text-secondary); font-size: 1.1rem; }
 
@@ -351,7 +352,7 @@ onMounted(async () => { await store.fetchWorkouts(); });
   .pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; border: 1px solid transparent; }
   .pill-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.35); }
   .pill-orange { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.35); }
-  .pill-green { background: rgba(16,185,129,0.15); color: var(--emerald-primary); border-color: rgba(16,185,129,0.35); }
+  .pill-green { background: color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent); color: var(--color-primary, #10b981); border-color: color-mix(in srgb, var(--color-primary, #10b981) 35%, transparent); }
   .pill-blue { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.35); }
   .pill-gold { background: rgba(201, 187, 0, 0.205); color: #eeea05; border-color: rgba(253, 228, 3, 0.35); }
   .toggle-icon { color: var(--text-secondary); margin-left: 0.5rem; }

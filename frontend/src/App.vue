@@ -11,6 +11,21 @@ const isMobileSidebarOpen = ref(false);
 const showTopbar = ref(true);
 const showScrollTop = ref(false);
 
+// Apply theme from localStorage
+const applyTheme = () => {
+  const savedTheme = localStorage.getItem("color-theme") || "default";
+  const colorThemes: Record<string, { primary: string; secondary: string }> = {
+    default: { primary: "#10b981", secondary: "#06b6d4" },
+    purple: { primary: "#8b5cf6", secondary: "#ec4899" },
+    blue: { primary: "#3b82f6", secondary: "#6366f1" },
+    orange: { primary: "#f59e0b", secondary: "#ef4444" },
+    teal: { primary: "#14b8a6", secondary: "#22c55e" }
+  };
+  const theme = colorThemes[savedTheme] || colorThemes.default;
+  document.documentElement.style.setProperty("--color-primary", theme!.primary);
+  document.documentElement.style.setProperty("--color-secondary", theme!.secondary);
+};
+
 const updateNavVisibility = () => {
   // Show nav/topbar on all routes except login
   showNav.value = route.path !== "/login";
@@ -27,6 +42,9 @@ const logout = () => {
 
 // On mount to DOM (Document Object Model)
 onMounted(() => {
+  // Apply theme on initial load
+  applyTheme();
+
   updateNavVisibility();
   let lastY = window.scrollY;
   const onScroll = () => {
@@ -176,7 +194,7 @@ body.sidebar-open {
   height: 52px;
   min-width: 52px;
   min-height: 52px;
-  background: var(--emerald-primary);
+  background: var(--color-primary, #10b981);
   color: white;
   border: none;
   border-radius: 50%;
@@ -194,7 +212,7 @@ body.sidebar-open {
 }
 
 .scroll-to-top:hover {
-  background: var(--emerald-dark);
+  filter: brightness(1.2);
   transform: translateY(-4px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
 }
@@ -262,7 +280,7 @@ body.sidebar-open {
 }
 
 .sidebar-brand:hover {
-  color: var(--emerald-primary);
+  color: var(--color-primary, #10b981);
 }
 
 .brand-icon {
@@ -296,12 +314,12 @@ body.sidebar-open {
 
 .nav-item:hover {
   color: var(--text-primary);
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in srgb, var(--color-primary, #10b981) 10%, transparent);
 }
 
 .nav-item.router-link-active {
-  color: var(--emerald-primary);
-  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-primary, #10b981);
+  background: color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
 }
 
 .nav-item.router-link-active::before {
@@ -312,7 +330,7 @@ body.sidebar-open {
   transform: translateY(-50%);
   width: 4px;
   height: 70%;
-  background: var(--emerald-primary);
+  background: var(--color-primary, #10b981);
   border-radius: 0 4px 4px 0;
 }
 

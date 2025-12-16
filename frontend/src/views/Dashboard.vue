@@ -34,6 +34,14 @@ const loading = computed(() => store.isLoadingWorkouts || store.isLoadingUser);
 const userAccount = computed(() => store.userAccount);
 const workouts = computed(() => store.workouts);
 
+// Get theme colors from CSS variables
+const primaryColor = computed(() => {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#10b981';
+});
+const secondaryColor = computed(() => {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || '#06b6d4';
+});
+
 // ---------- Individual Chart Range Filters ----------
 type Range = "1m" | "3m" | "6m" | "1y" | "all";
 type DisplayStyle = "mo" | "wk";
@@ -541,8 +549,8 @@ onMounted(() => {
                 datasets: [{ 
                   label: 'Hours', 
                   data: hoursTrained_Data.data, 
-                  borderColor: '#10b981', 
-                  backgroundColor: 'rgba(16,185,129,0.2)', 
+                  borderColor: primaryColor, 
+                  backgroundColor: primaryColor + '33', 
                   fill: true, 
                   tension: 0.4,
                   borderWidth: 2,
@@ -584,8 +592,8 @@ onMounted(() => {
                 datasets: [{ 
                   label: 'Volume (kg)', 
                   data: volumeProgression_Data.data, 
-                  borderColor: '#06b6d4', 
-                  backgroundColor: 'rgba(6,182,212,0.2)', 
+                  borderColor: secondaryColor, 
+                  backgroundColor: secondaryColor + '33', 
                   fill: true, 
                   tension: 0.4,
                   borderWidth: 2,
@@ -628,8 +636,8 @@ onMounted(() => {
                   { 
                     label: 'Reps', 
                     data: repsAndSets_Data.reps, 
-                    borderColor: '#8b5cf6', 
-                    backgroundColor: 'rgba(139,92,246,0.15)', 
+                    borderColor: primaryColor, 
+                    backgroundColor: primaryColor + '26', 
                     fill: true, 
                     tension: 0.4,
                     borderWidth: 2,
@@ -639,8 +647,8 @@ onMounted(() => {
                   { 
                     label: 'Sets', 
                     data: repsAndSets_Data.sets, 
-                    borderColor: '#f59e0b', 
-                    backgroundColor: 'rgba(245,158,11,0.15)', 
+                    borderColor: secondaryColor, 
+                    backgroundColor: secondaryColor + '26', 
                     fill: true, 
                     tension: 0.4,
                     borderWidth: 2,
@@ -700,14 +708,14 @@ onMounted(() => {
                 datasets: [{ 
                   label: 'PRs', 
                   data: prsOverTime_Data.data, 
-                  borderColor: '#eab308', 
-                  backgroundColor: 'rgba(234,179,8,0.2)', 
+                  borderColor: primaryColor, 
+                  backgroundColor: primaryColor + '33', 
                   fill: true, 
                   tension: 0.4,
                   borderWidth: 3,
                   pointRadius: 4,
                   pointHoverRadius: 6,
-                  pointBackgroundColor: '#eab308'
+                  pointBackgroundColor: primaryColor
                 }] 
               }" 
               :options="chartOptions" 
@@ -730,12 +738,12 @@ onMounted(() => {
                 datasets: [{ 
                   label: 'Workouts', 
                   data: weeklyRhythm_Data.data, 
-                  borderColor: '#ec4899', 
-                  backgroundColor: 'rgba(236,72,153,0.4)', 
+                  borderColor: secondaryColor, 
+                  backgroundColor: secondaryColor + '66', 
                   borderWidth: 3,
                   pointRadius: 4,
                   pointHoverRadius: 6,
-                  pointBackgroundColor: '#ec4899',
+                  pointBackgroundColor: secondaryColor,
                   pointBorderColor: '#fff',
                   pointBorderWidth: 2
                 }] 
@@ -822,7 +830,7 @@ onMounted(() => {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #10b981, #06b6d4);
+  background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, #06b6d4));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -927,8 +935,8 @@ onMounted(() => {
 .loading-spinner {
   width: 56px;
   height: 56px;
-  border: 4px solid rgba(16, 185, 129, 0.1);
-  border-top-color: #10b981;
+  border: 4px solid color-mix(in srgb, var(--color-primary, #10b981) 10%, transparent);
+  border-top-color: var(--color-primary, #10b981);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -952,11 +960,11 @@ onMounted(() => {
 }
 
 .stat-card {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(11, 17, 31, 0.95);
   backdrop-filter: blur(8px);
   padding: 1.25rem 1rem;
   border-radius: 16px;
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.6);
   display: flex;
   align-items: center;
   gap: 0.9rem;
@@ -972,7 +980,7 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #10b981, #06b6d4);
+  background: linear-gradient(90deg, var(--color-primary, #10b981), var(--color-secondary, #06b6d4));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -980,8 +988,8 @@ onMounted(() => {
 .stat-card:hover {
   transform: translateY(-4px);
   border-color: var(--color-primary, #10b981);
-  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.15);
-  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
+  background: rgba(15, 23, 42, 1);
 }
 
 .stat-card:hover::before {
@@ -1037,10 +1045,10 @@ onMounted(() => {
 }
 
 .chart-container {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(11, 17, 31, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 16px;
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.6);
   overflow: hidden;
   transition: all 0.3s ease;
   display: flex;
@@ -1048,8 +1056,8 @@ onMounted(() => {
 }
 
 .chart-container:hover {
-  border-color: rgba(16, 185, 129, 0.5);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.12);
+  border-color: color-mix(in srgb, var(--color-primary, #10b981) 50%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-primary, #10b981) 12%, transparent);
   transform: translateY(-2px);
 }
 
@@ -1060,7 +1068,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(6, 182, 212, 0.05));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary, #10b981) 5%, transparent), color-mix(in srgb, var(--color-secondary, #06b6d4) 5%, transparent));
 }
 
 .chart-title-section {

@@ -247,18 +247,18 @@ onMounted(async () => {
   .filter-select { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; }
 
   .loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; gap: 1rem; }
-  .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(16,185,129,0.25); border-top-color: var(--emerald-primary); border-radius: 50%; animation: spin 0.9s linear infinite; }
+  .loading-spinner { width: 48px; height: 48px; border: 4px solid color-mix(in srgb, var(--color-primary, #10b981) 25%, transparent); border-top-color: var(--color-primary, #10b981); border-radius: 50%; animation: spin 0.9s linear infinite; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .loading-container p { color: var(--text-secondary); font-size: 1.1rem; }
 
   .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
   .card { min-width: 0; display: flex; flex-direction: column; }
   .card { background: var(--bg-card); padding: 1rem; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow); border: 1px solid var(--border-color); transition: all 0.3s ease; }
-  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--shadow); border-color: var(--emerald-primary); }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--shadow); border-color: var(--color-primary, #10b981); }
 
   .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
   .title-row { display: flex; align-items: center; gap: 0.5rem; }
-  .index-pill { display: inline-block; background: rgba(16,185,129,0.15); color: var(--emerald-primary); border: 1px solid rgba(16,185,129,0.3); border-radius: 999px; padding: 0.15rem 0.5rem; font-size: 0.8rem; font-weight: 600; }
+  .index-pill { display: inline-block; background: color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent); color: var(--color-primary, #10b981); border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent); border-radius: 999px; padding: 0.15rem 0.5rem; font-size: 0.8rem; font-weight: 600; }
   .card-header h2 { margin: 0; color: var(--text-primary); font-size: 1.125rem; font-weight: 600; }
   .header-meta { display: flex; align-items: center; gap: 0.5rem; }
   .date { color: var(--text-secondary); font-size: 0.85rem; }
