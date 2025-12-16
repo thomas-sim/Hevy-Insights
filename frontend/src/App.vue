@@ -151,17 +151,17 @@ watch(isMobileSidebarOpen, (open) => {
 }
 
 :root {
-  --bg-primary: #1e1e2e;
-  --bg-secondary: #27293d;
-  --bg-card: #27293d;
-  --bg-card-hover: #2f3147;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-card-hover: #334155;
   --text-primary: #ffffff;
-  --text-secondary: #9A9A9A;
+  --text-secondary: #94a3b8;
   --emerald-primary: #10b981;
   --emerald-dark: #059669;
   --emerald-darker: #047857;
   --cyan-accent: #06b6d4;
-  --border-color: #2b3553;
+  --border-color: #334155;
   --shadow: rgba(0, 0, 0, 0.3);
   --sidebar-width: 260px;
   --topbar-height: 56px;
@@ -254,17 +254,19 @@ body.sidebar-open {
   top: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+  backdrop-filter: blur(8px);
+  border-right: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 20%, var(--border-color));
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  box-shadow: 2px 0 10px var(--shadow);
+  box-shadow: 2px 0 10px var(--shadow), inset -1px 0 0 color-mix(in srgb, var(--color-primary, #10b981) 10%, transparent);
 }
 
 .sidebar-header {
   padding: 1.5rem 1.25rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 15%, var(--border-color));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary, #10b981) 5%, transparent), transparent);
 }
 
 .sidebar-brand {
@@ -280,6 +282,7 @@ body.sidebar-open {
 
 .sidebar-brand:hover {
   color: var(--color-primary, #10b981);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent));
 }
 
 .brand-icon {
@@ -345,13 +348,15 @@ body.sidebar-open {
 
 .sidebar-footer {
   padding: 1rem 0.75rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 15%, var(--border-color));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary, #10b981) 3%, transparent), transparent);
 }
 
 .version-info {
-  color: var(--text-secondary);
+  color: color-mix(in srgb, var(--color-primary, #10b981) 60%, var(--text-secondary));
   font-size: 0.8rem;
   margin: 0 0 0.5rem 0.5rem;
+  font-weight: 500;
 }
 
 .logout-btn {
