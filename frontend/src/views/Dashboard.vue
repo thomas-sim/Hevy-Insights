@@ -78,6 +78,26 @@ const monthKey = (d: Date) => {
   return d.toISOString().slice(0,7); // "YYYY-MM"
 };
 
+// Get calendar week number (ISO 8601)
+const getWeekNumber = (d: Date): number => {
+  const date = new Date(d.getTime());
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 4 - (date.getDay() || 7));
+  const yearStart = new Date(date.getFullYear(), 0, 1);
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return weekNo;
+};
+
+// Format period label based on display style
+const formatPeriodLabel = (period: string, displayStyle: DisplayStyle): string => {
+  if (displayStyle === "wk") {
+    const date = new Date(period);
+    const weekNum = getWeekNumber(date);
+    return `CW ${weekNum}`;
+  }
+  return period; // Monthly: keep as "YYYY-MM"
+};
+
 // Helper to filter by range
 const filterByRange = (range: Range) => {
   const now = new Date();
@@ -130,7 +150,7 @@ const hoursTrained_Data = computed(() => {
   const filtered = filterByRange(hoursTrained_Range.value);
   const agg = aggregateByPeriod(hoursTrained_Range.value, hoursTrained_Display.value, filtered);
   return {
-    labels: agg.map(w => w.period),
+    labels: agg.map(w => formatPeriodLabel(w.period, hoursTrained_Display.value)),
     data: agg.map(w => Number(((w.durationMin ?? 0) / 60).toFixed(2)))
   };
 });
@@ -140,7 +160,7 @@ const volumeProgression_Data = computed(() => {
   const filtered = filterByRange(volumeProgression_Range.value);
   const agg = aggregateByPeriod(volumeProgression_Range.value, volumeProgression_Display.value, filtered);
   return {
-    labels: agg.map(w => w.period),
+    labels: agg.map(w => formatPeriodLabel(w.period, volumeProgression_Display.value)),
     data: agg.map(w => Math.round(w.volumeKg ?? 0))
   };
 });
@@ -150,7 +170,7 @@ const repsAndSets_Data = computed(() => {
   const filtered = filterByRange(repsAndSets_Range.value);
   const agg = aggregateByPeriod(repsAndSets_Range.value, repsAndSets_Display.value, filtered);
   return {
-    labels: agg.map(w => w.period),
+    labels: agg.map(w => formatPeriodLabel(w.period, repsAndSets_Display.value)),
     reps: agg.map(w => w.reps ?? 0),
     sets: agg.map(w => w.sets ?? 0)
   };
@@ -185,7 +205,7 @@ const prsOverTime_Data = computed(() => {
   
   const keys = Object.keys(prMap).sort();
   return {
-    labels: keys,
+    labels: keys.map(k => formatPeriodLabel(k, prsOverTime_Display.value)),
     data: keys.map(k => prMap[k] || 0)
   };
 });
