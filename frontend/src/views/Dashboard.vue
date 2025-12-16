@@ -47,7 +47,8 @@ const volumeProgression_Display = ref<DisplayStyle>("mo");
 const repsAndSets_Range = ref<Range>("6m");
 const repsAndSets_Display = ref<DisplayStyle>("mo");
 
-const range = ref<Range>("6m");
+const prsOverTime_Range = ref<Range>("6m");
+const prsOverTime_Display = ref<DisplayStyle>("mo");
 
 const muscleDistribution_Range = ref<Range>("all");
   
@@ -146,6 +147,41 @@ const repsAndSets_Data = computed(() => {
     sets: agg.map(w => w.sets ?? 0)
   };
 });
+
+// PRs Over Time - Count total PRs earned in workouts
+const prsOverTime_Data = computed(() => {
+  const filtered = filterByRange(prsOverTime_Range.value);
+  const prMap: Record<string, number> = {};
+  
+  const useWeeks = prsOverTime_Display.value === "wk";
+  
+  for (const w of filtered) {
+    const d = new Date((w.start_time || 0) * 1000);
+    const key = useWeeks ? weekKey(d) : monthKey(d);
+    
+    // Count PRs from set.prs or set.personalRecords arrays
+    let prCount = 0;
+    for (const ex of (w.exercises || [])) {
+      for (const s of (ex.sets || [])) {
+        // set.prs
+        const prsArr = Array.isArray(s?.prs) ? s.prs : (s?.prs ? [s.prs] : []);
+        // set.personalRecords (Probably deprecated?)
+        const personalArr = Array.isArray(s?.personalRecords) ? s.personalRecords : (s?.personalRecords ? [s.personalRecords] : []);
+        const allPRs = [...prsArr, ...personalArr].filter(Boolean);
+        prCount += allPRs.length;
+      }
+    }
+    
+    prMap[key] = (prMap[key] || 0) + prCount;
+  }
+  
+  const keys = Object.keys(prMap).sort();
+  return {
+    labels: keys,
+    data: keys.map(k => prMap[k] || 0)
+  };
+});
+
 // Weekly Rhythm - Distribution across days of week
 const weeklyRhythm_Data = computed(() => {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -635,16 +671,47 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- PRs Over Time Chart -->
         <div class="chart-container">
           <div class="chart-header">
-            <h2>Reps / Sets Per Week</h2>
-            <span class="chart-subtitle">Filtered by range</span>
+            <div class="chart-title-section">
+              <h2>🏆 PRs Over Time</h2>
+              <span class="chart-subtitle">Personal records achieved</span>
+            </div>
+            <div class="chart-filters">
+              <div class="filter-group">
+                <button @click="prsOverTime_Range = 'all'" :class="['filter-btn', { active: prsOverTime_Range === 'all' }]" title="All Time">All</button>
+                <button @click="prsOverTime_Range = '1y'" :class="['filter-btn', { active: prsOverTime_Range === '1y' }]" title="1 Year">1Y</button>
+                <button @click="prsOverTime_Range = '6m'" :class="['filter-btn', { active: prsOverTime_Range === '6m' }]" title="6 Months">6M</button>
+                <button @click="prsOverTime_Range = '3m'" :class="['filter-btn', { active: prsOverTime_Range === '3m' }]" title="3 Months">3M</button>
+                <button @click="prsOverTime_Range = '1m'" :class="['filter-btn', { active: prsOverTime_Range === '1m' }]" title="1 Month">1M</button>
+              </div>
+              <div class="filter-group">
+                <button @click="prsOverTime_Display = 'mo'" :class="['filter-btn', { active: prsOverTime_Display === 'mo' }]" title="Monthly">Mo</button>
+                <button @click="prsOverTime_Display = 'wk'" :class="['filter-btn', { active: prsOverTime_Display === 'wk' }]" title="Weekly">Wk</button>
+              </div>
+            </div>
           </div>
           <div class="chart-body">
-            <Line :key="'rs-' + range" :data="{ labels: hoursPerWeekLabels, datasets: [
-              { label: 'Reps', data: repsPerWeekData, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)', fill: true, tension: 0.3 },
-              { label: 'Sets', data: setsPerWeekData, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.15)', fill: true, tension: 0.3 }
-            ] }" :options="chartOptions" />
+            <Line 
+              :key="'prs-' + prsOverTime_Range" 
+              :data="{ 
+                labels: prsOverTime_Data.labels, 
+                datasets: [{ 
+                  label: 'PRs', 
+                  data: prsOverTime_Data.data, 
+                  borderColor: '#eab308', 
+                  backgroundColor: 'rgba(234,179,8,0.2)', 
+                  fill: true, 
+                  tension: 0.4,
+                  borderWidth: 3,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  pointBackgroundColor: '#eab308'
+                }] 
+              }" 
+              :options="chartOptions" 
+            />
           </div>
         </div>
 
