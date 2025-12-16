@@ -29,7 +29,6 @@ ChartJS.register(
 
 const store = useHevyCache();
 const chartData = ref<any>(null);
-const muscleGroupData = ref<any>(null);
 
 const loading = computed(() => store.isLoadingWorkouts || store.isLoadingUser);
 const userAccount = computed(() => store.userAccount);
@@ -63,6 +62,9 @@ const startOfWeek = (d: Date) => {
 const weekKey = (d: Date) => {
   const m = startOfWeek(d);
   return m.toISOString().slice(0,10);
+};
+const monthKey = (d: Date) => {
+  return d.toISOString().slice(0,7); // "YYYY-MM"
 };
 
 // Helper to filter by range
@@ -181,19 +183,25 @@ const muscleDistribution_Data = computed(() => {
 
 // Workout streak (weeks with >=1 workout)
 const workoutStreakWeeks = computed(() => {
-  // count consecutive weeks from latest going backward
-  const arr = weeksAgg.value;
+  const now = new Date();
+  const weeks: Record<string, boolean> = {};
+  for (const w of workouts.value) {
+    const d = new Date((w.start_time || 0) * 1000);
+    weeks[weekKey(d)] = true;
+  }
   let streak = 0;
-  for (let i = arr.length - 1; i >= 0; i--) {
-    if ((arr[i]?.workouts ?? 0) > 0) streak++; else break;
+  let current = startOfWeek(now);
+  while (weeks[weekKey(current)]) {
+    streak++;
+    current.setDate(current.getDate() - 7);
   }
   return streak;
 });
 
-// Most trained exercise (by occurrences)
+// Most trained exercise
 const mostTrainedExercise = computed(() => {
   const freq: Record<string, number> = {};
-  for (const w of filteredByRange.value) {
+  for (const w of workouts.value) {
     for (const ex of (w.exercises || [])) {
       const name = ex.title || "Unknown";
       freq[name] = (freq[name] || 0) + 1;
@@ -363,6 +371,10 @@ const radarOptions = {
     }
   }
 };
+
+onMounted(() => {
+  fetchData();
+});
 </script>
 
 <!-- =============================================================================== -->
