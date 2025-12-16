@@ -139,6 +139,26 @@ watch(isMobileSidebarOpen, (open) => {
     <!-- Main Content Area -->
     <main :class="{ 'with-sidebar': showNav, 'without-sidebar': !showNav, 'dimmed': isMobileSidebarOpen }">
       <router-view />
+      
+      <!-- Global Footer (shown on all pages except login) -->
+      <footer v-if="showNav" class="global-footer">
+        <div class="footer-content">
+          <div class="footer-buttons">
+            <a href="mailto:hevy@kida.one" target="_blank" class="footer-btn">
+              📧 Contact me
+            </a>
+            <a href="https://github.com/casudo/Hevy-Insights" target="_blank" class="footer-btn">
+              ⭐ Star on GitHub
+            </a>
+            <a href="https://github.com/casudo/Hevy-Insights/issues/new" target="_blank" class="footer-btn">
+              🐛 Report a bug
+            </a>
+          </div>
+          <div class="footer-love">
+            Made with ❤️ by casudo
+          </div>
+        </div>
+      </footer>
     </main>
   </div>
 </template>
@@ -391,6 +411,59 @@ main.with-sidebar {
 main.without-sidebar {
   width: 100%;
   min-height: 100vh;
+}
+
+/* Global Footer */
+.global-footer {
+  padding: 1.5rem 1.5rem 1rem 1.5rem; /* Top, Right, Bottom, Left */
+  background: linear-gradient(180deg, transparent 0%, rgba(30, 41, 59, 0.5) 100%);
+  border-top: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 10%, var(--border-color));
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.4);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.footer-btn:hover {
+  border-color: var(--color-primary, #10b981);
+  color: var(--color-primary, #10b981);
+  background: rgba(30, 41, 59, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);
+}
+
+.footer-love {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 /* Mobile Responsive */
