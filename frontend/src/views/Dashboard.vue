@@ -423,9 +423,9 @@ const radarOptions = {
   }
 };
 
-// Generate distinct colors for muscle distribution (fixed palette)
+// Generate distinct colors for muscle distribution (expanded palette)
 const generateGradientColors = (count: number): string[] => {
-  // Fixed distinct color palette that works well together
+  // Expanded distinct color palette (24 colors) for better variety
   const distinctColors = [
     "#10b981", // Emerald
     "#3b82f6", // Blue
@@ -439,6 +439,18 @@ const generateGradientColors = (count: number): string[] => {
     "#6366f1", // Indigo
     "#22c55e", // Green
     "#eab308", // Yellow
+    "#84cc16", // Lime
+    "#0ea5e9", // Sky Blue
+    "#d946ef", // Fuchsia
+    "#fb923c", // Light Orange
+    "#a855f7", // Light Purple
+    "#2dd4bf", // Light Teal
+    "#f87171", // Light Red
+    "#4ade80", // Light Green
+    "#fbbf24", // Light Yellow
+    "#38bdf8", // Light Blue
+    "#fb7185", // Rose
+    "#818cf8", // Light Indigo
   ];
   
   // Return only the colors we need, cycling if necessary
