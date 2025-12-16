@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { authService } from "./services/api";
+import { useHevyCache } from "./stores/hevy_cache";
 
 const router = useRouter();
 const route = useRoute();
+const store = useHevyCache();
+const userAccount = computed(() => store.userAccount);
 const showNav = ref(false);
 const appVersion = "v1.1.0"; // Update version as needed
 const isMobileSidebarOpen = ref(false);
@@ -45,14 +48,12 @@ onMounted(() => {
   applyTheme();
 
   updateNavVisibility();
-  let lastY = window.scrollY;
+  // Keep topbar always visible on mobile
+  showTopbar.value = true;
   const onScroll = () => {
     const y = window.scrollY;
-    // Show topbar when scrolling up or near top; hide on scroll down
-    showTopbar.value = y < 10 || y < lastY;
     // Show scroll to top button when scrolled down 300px
     showScrollTop.value = y > 300;
-    lastY = y;
   };
   window.addEventListener("scroll", onScroll, { passive: true });
 });
@@ -82,7 +83,7 @@ watch(isMobileSidebarOpen, (open) => {
     <header v-if="showNav && showTopbar" class="topbar">
       <button class="menu-btn" @click="isMobileSidebarOpen = !isMobileSidebarOpen">☰</button>
       <router-link to="/dashboard" class="topbar-brand">
-        <span class="brand-text">Hevy Insights</span>
+        <span class="brand-text">Hevy Insights<span v-if="userAccount" class="brand-username"> for {{ userAccount.username }}</span></span>
       </router-link>
     </header>
     
@@ -471,6 +472,22 @@ main.without-sidebar {
   :root {
     --sidebar-width: 220px;
   }
+  
+  /* Footer buttons grid */
+  .footer-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .footer-btn {
+    justify-content: center;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+  }
+  
   /* Mobile: stack topbar above content */
   #app { flex-direction: column; }
   .topbar {
@@ -481,10 +498,20 @@ main.without-sidebar {
     padding: 0 0.75rem;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1200;
-    transition: transform 0.2s ease;
+  }
+  
+  main {
+    padding-top: var(--topbar-height);
+  }
+  
+  .topbar.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
   }
   .menu-btn {
     background: color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
@@ -495,6 +522,11 @@ main.without-sidebar {
     font-size: 1rem;
   }
   .topbar-brand { display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); text-decoration: none; font-weight: 600; }
+  .brand-username { font-weight: 500; color: var(--text-secondary); font-style: italic;}
+  
+  .sidebar-header {
+    display: none;
+  }
   
   .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; top: var(--topbar-height); height: calc(100vh - var(--topbar-height)); bottom: auto; overflow-y: auto; }
   .sidebar.mobile-open { transform: translateX(0); }
@@ -525,6 +557,21 @@ main.without-sidebar {
   .nav-item {
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
+  }
+  
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.5rem;
+  }
+  
+  .sidebar-nav .nav-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 48px;
   }
 }
 </style>

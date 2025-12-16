@@ -634,6 +634,16 @@ const barChartOptions = {
   color: var(--text-secondary);
 }
 
+@media (max-width: 768px) {
+  .user-badge {
+    display: none;
+  }
+  
+  .settings-btn {
+    display: none;
+  }
+}
+
 /* Search Section */
 .search-section {
   display: flex;
@@ -714,5 +724,11 @@ const barChartOptions = {
   .header-row { flex-direction: column; align-items: flex-start; }
   .header-actions { width: 100%; }
   .search-input { width: 100%; min-width: unset; }
+}
+
+@media (max-width: 480px) {
+  .title-section h1 {
+    font-size: 1.625rem;
+  }
 }
 </style>

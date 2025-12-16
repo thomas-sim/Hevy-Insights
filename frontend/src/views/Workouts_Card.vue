@@ -397,6 +397,16 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
+@media (max-width: 768px) {
+  .user-badge {
+    display: none;
+  }
+  
+  .settings-btn {
+    display: none;
+  }
+}
+
 .filters { display: flex; align-items: center; gap: 0.75rem; }
 .filter-label { color: var(--text-secondary); font-size: 0.9rem; }
 .filter-select { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; }
@@ -430,11 +440,12 @@ onMounted(async () => {
 .workout-description { margin: 0.5rem 0 1rem; color: var(--text-secondary); }
 
 .exercises h3 { margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem; }
-.exercise { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
-.exercise-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); color: var(--text-primary); border: none; padding: 0.6rem 0.75rem; cursor: pointer; }
-.exercise-title { font-weight: 600; }
+.exercise { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; background: rgba(0, 0, 0, 0.2); }
+.exercise-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.3); color: var(--text-primary); border: none; padding: 0.6rem 0.75rem; cursor: pointer; transition: all 0.2s ease; }
+.exercise-toggle:hover { background: rgba(0, 0, 0, 0.4); }
+.exercise-title { font-weight: 600; font-size: 0.95rem; }
 .toggle-icon { color: var(--text-secondary); }
-.exercise-content { background: var(--bg-card); }
+.exercise-content { background: rgba(0, 0, 0, 0.15); padding: 0.75rem; }
 
 .sets-table { width: 100%; border-collapse: collapse; }
 .sets-table th, .sets-table td { padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-primary); }
@@ -464,8 +475,28 @@ onMounted(async () => {
   .card-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .stats-row { flex-wrap: wrap; gap: 0.75rem; }
   .stat strong { font-size: 0.95rem; }
-  .sets-table { display: block; overflow-x: auto; }
-  .sets-table table { min-width: 420px; }
+  .sets-table { display: block; overflow-x: auto; width: 100%; }
+  .sets-table table { min-width: 100%; width: 100%; }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .pagination-btn {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
+  }
+  
+  .filter-select {
+    font-size: 0.875rem;
+  }
 }
 @media (max-width: 480px) {
   .workouts {
@@ -474,6 +505,18 @@ onMounted(async () => {
   
   .title-section h1 {
     font-size: 1.625rem;
+  }
+  
+  .user-badge {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .user-avatar {
+    display: none;
+  }
+  
+  .user-details span {
+    display: none;
   }
 }
 

@@ -79,11 +79,6 @@ const resetSettings = () => {
         </div>
 
         <div class="header-actions">
-          <!-- Back Button -->
-          <button @click="$router.push('/')" class="back-btn" title="Back to Dashboard">
-            ←
-          </button>
-          
           <!-- User Badge -->
           <div v-if="userAccount" class="user-badge">
             <div class="user-avatar">{{ userAccount.username.charAt(0).toUpperCase() }}</div>
@@ -257,6 +252,12 @@ const resetSettings = () => {
 .user-details span {
   font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .user-badge {
+    display: none;
+  }
 }
 
 /* Settings Content */
@@ -445,6 +446,12 @@ const resetSettings = () => {
   .btn-primary,
   .btn-secondary {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-section h1 {
+    font-size: 1.625rem;
   }
 }
 </style>

@@ -463,6 +463,16 @@ onMounted(async () => { await store.fetchWorkouts(); });
   .filter-label { color: var(--text-secondary); font-size: 0.9rem; }
   .filter-select { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; }
   .filter-input { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; width: 120px; }
+  
+  @media (max-width: 768px) {
+    .user-badge {
+      display: none;
+    }
+    
+    .settings-btn {
+      display: none;
+    }
+  }
 
   /* Contribution graph */
   .contrib-graph { margin-bottom: 1.5rem; }
@@ -486,7 +496,8 @@ onMounted(async () => { await store.fetchWorkouts(); });
   .list { display: flex; flex-direction: column; gap: 0.75rem; }
   .item { border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); overflow: hidden; transition: all 0.3s ease; }
   .item:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border-color: var(--color-primary, #10b981); }
-  .item-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); color: var(--text-primary); border: none; padding: 0.75rem 1rem; cursor: pointer; }
+  .item-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); color: var(--text-primary); border: none; padding: 0.75rem 1rem; cursor: pointer; transition: all 0.2s ease; }
+  .item-toggle:hover { background: rgba(30, 41, 59, 0.8); }
   .item .line { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
   .line-date { color: var(--text-secondary); font-weight: 600; }
   .line-name { color: var(--text-primary); font-weight: 700; }
@@ -510,11 +521,12 @@ onMounted(async () => { await store.fetchWorkouts(); });
   .stat span { color: var(--text-secondary); font-size: 0.8rem; }
 
   .exercises h3 { margin: 1rem 0 0.5rem; color: var(--text-primary); font-size: 1rem; }
-  .exercise { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; }
+  .exercise { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; overflow: hidden; background: rgba(0, 0, 0, 0.2); }
   .exercise-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
-  .exercise-header { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-secondary); padding: 0.6rem 0.75rem; }
+  .exercise-header { display: flex; align-items: center; gap: 0.5rem; background: rgba(0, 0, 0, 0.3); padding: 0.6rem 0.75rem; transition: all 0.2s ease; }
+  .exercise-header:hover { background: rgba(0, 0, 0, 0.4); }
   .exercise-header .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); }
-  .exercise-title { font-weight: 600; }
+  .exercise-title { font-weight: 600; font-size: 0.95rem; }
   .sets-table { width: 100%; border-collapse: collapse; }
   .sets-table th, .sets-table td { padding: 0.5rem; border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-primary); }
   .sets-table th { color: var(--text-secondary); font-weight: 500; }
@@ -547,6 +559,13 @@ onMounted(async () => { await store.fetchWorkouts(); });
     .stats { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
     .exercise-grid { grid-template-columns: 1fr; }
     .exercise-header { flex-wrap: wrap; }
-    .sets-table { display: block; overflow-x: auto; }
+    .sets-table { display: block; overflow-x: auto; width: 100%; }
+    .sets-table table { min-width: 100%; width: 100%; }
   }
+
+@media (max-width: 480px) {
+  .title-section h1 {
+    font-size: 1.625rem;
+  }
+}
 </style>

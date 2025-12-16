@@ -1202,6 +1202,14 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .user-badge {
+    display: none;
+  }
+  
+  .settings-btn {
+    display: none;
+  }
+
   .dashboard {
     padding: 1.5rem 1rem;
   }
@@ -1243,10 +1251,6 @@ onMounted(() => {
   
   .title-section h1 {
     font-size: 1.625rem;
-  }
-  
-  .subtitle {
-    font-size: 0.875rem;
   }
   
   .stats-grid {
