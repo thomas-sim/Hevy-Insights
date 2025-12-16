@@ -414,9 +414,9 @@ main.without-sidebar {
     transition: transform 0.2s ease;
   }
   .menu-btn {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--emerald-primary);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
+    color: var(--color-primary, #10b981);
+    border: 1px solid color-mix(in srgb, var(--color-primary, #10b981) 30%, transparent);
     border-radius: 6px;
     padding: 0.5rem 0.6rem;
     font-size: 1rem;
