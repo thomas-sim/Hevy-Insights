@@ -709,17 +709,17 @@ const radarOptions = {
 
 <style scoped>
 .dashboard {
-  padding: 1.5rem 1.25rem; /* tighter top/bottom */
+  padding: 1.5rem 1.25rem;
   width: 100%;
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: #0f172a;
 }
 
 /* Header Styles */
 .dashboard-header {
   margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.15);
 }
 
 .header-content {
@@ -732,8 +732,8 @@ const radarOptions = {
 
 .title-section h1 {
   margin: 0;
-  color: var(--text-primary);
-  font-size: 2rem; /* slightly smaller title text */
+  color: #f8fafc;
+  font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #10b981, #06b6d4);
@@ -744,16 +744,46 @@ const radarOptions = {
 
 .subtitle {
   margin: 0.5rem 0 0;
-  color: var(--text-secondary);
+  color: #94a3b8;
   font-size: 1rem;
   font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.settings-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  color: #94a3b8;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-btn:hover {
+  border-color: var(--color-primary, #10b981);
+  color: var(--color-primary, #10b981);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
 }
 
 .user-badge {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: var(--bg-card);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
   padding: 0.75rem 1.25rem;
   border-radius: 50px;
   border: 1px solid rgba(16, 185, 129, 0.2);
@@ -761,15 +791,16 @@ const radarOptions = {
 }
 
 .user-badge:hover {
-  border-color: var(--emerald-primary);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+  border-color: var(--color-primary, #10b981);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+  transform: translateY(-2px);
 }
 
 .user-avatar {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--color-primary, #10b981), var(--color-secondary, #06b6d4));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -777,6 +808,7 @@ const radarOptions = {
   font-weight: 700;
   font-size: 1.125rem;
   text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .user-details {
@@ -787,13 +819,13 @@ const radarOptions = {
 
 .user-details strong {
   font-size: 0.95rem;
-  color: var(--text-primary);
+  color: #f8fafc;
   font-weight: 600;
 }
 
 .user-details span {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: #94a3b8;
 }
 
 /* Loading State */
@@ -810,7 +842,7 @@ const radarOptions = {
   width: 56px;
   height: 56px;
   border: 4px solid rgba(16, 185, 129, 0.1);
-  border-top-color: var(--emerald-primary);
+  border-top-color: #10b981;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -820,7 +852,7 @@ const radarOptions = {
 }
 
 .loading-container p {
-  color: var(--text-secondary);
+  color: #94a3b8;
   font-size: 1rem;
   margin: 0;
 }
@@ -828,16 +860,17 @@ const radarOptions = {
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 1rem; /* tighter spacing between cards */
-  margin-bottom: 2rem; /* less bottom gap */
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
-  background: var(--bg-card);
-  padding: 1.25rem 1rem; /* reduce padding top/bottom */
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  padding: 1.25rem 1rem;
   border-radius: 16px;
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(51, 65, 85, 0.5);
   display: flex;
   align-items: center;
   gap: 0.9rem;
@@ -853,15 +886,16 @@ const radarOptions = {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--emerald-primary), var(--cyan-accent));
+  background: linear-gradient(90deg, #10b981, #06b6d4);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  border-color: var(--emerald-primary);
+  border-color: var(--color-primary, #10b981);
   box-shadow: 0 12px 28px rgba(16, 185, 129, 0.15);
+  background: rgba(15, 23, 42, 0.9);
 }
 
 .stat-card:hover::before {
@@ -882,7 +916,7 @@ const radarOptions = {
 }
 
 .stat-card:hover .stat-icon {
-  transform: scale(1.1);
+  transform: scale(1.1) rotate(5deg);
 }
 
 .stat-content {
@@ -891,98 +925,143 @@ const radarOptions = {
 }
 
 .stat-value {
-  font-size: 1.5rem; /* slightly smaller value text */
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #f8fafc;
   margin-bottom: 0.25rem;
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stat-label {
-  color: var(--text-secondary);
-  font-size: 0.8rem; /* slightly smaller label */
+  color: #94a3b8;
+  font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* Charts Grid */
+/* Charts Grid - 2 Column Layout */
 .charts-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem; /* tighter spacing between charts */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
 }
-.charts-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
-.filters { display: flex; align-items: center; gap: 0.5rem; }
-.filter-label { color: var(--text-secondary); font-size: 0.85rem; }
-.filter-select { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.4rem 0.6rem; }
 
 .chart-container {
-  background: var(--bg-card);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
   border-radius: 16px;
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(51, 65, 85, 0.5);
   overflow: hidden;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-container:hover {
-  border-color: var(--emerald-primary);
+  border-color: rgba(16, 185, 129, 0.5);
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.12);
+  transform: translateY(-2px);
 }
 
 .chart-header {
-  padding: 1rem 1.25rem; /* reduce top/bottom */
-  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(6, 182, 212, 0.05));
 }
 
+.chart-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
 .chart-header h2 {
-  margin: 0;
-  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+  color: #f8fafc;
   font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.25px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .chart-subtitle {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
+.chart-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.filter-btn {
+  padding: 0.375rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-btn:hover {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.filter-btn.active {
+  background: var(--color-primary, #10b981);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
 .chart-body {
-  padding: 1.25rem 1rem; /* reduce padding */
-  min-height: 300px;
+  flex: 1;
+  padding: 1.25rem 1rem;
+  min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .doughnut-body {
-  min-height: 340px;
+  min-height: 320px;
+  padding: 1.5rem 1rem;
+}
+
+.radar-body {
+  min-height: 320px;
+  padding: 1.5rem 1rem;
 }
 
 /* Responsive Adjustments */
-@media (min-width: 1024px) {
+@media (max-width: 1024px) {
   .charts-grid {
-    grid-template-columns: 2fr 1fr;
-  }
-  
-  .large-chart {
-    grid-column: span 1;
-  }
-}
-
-@media (min-width: 1400px) {
-  .dashboard {
-    padding: 2rem 2.25rem; /* slightly tighter on xl */
-  }
-  
-  .stats-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: 1fr;
   }
 }
 
@@ -997,20 +1076,27 @@ const radarOptions = {
   
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
   }
   
-  .stat-card {
-    padding: 1.25rem;
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .chart-filters {
+    width: 100%;
+    justify-content: flex-end;
   }
   
   .chart-body {
     padding: 1rem 0.75rem;
-    min-height: 260px;
+    min-height: 280px;
   }
   
-  .doughnut-body {
-    min-height: 300px;
+  .doughnut-body,
+  .radar-body {
+    min-height: 280px;
   }
 }
 
@@ -1027,14 +1113,18 @@ const radarOptions = {
     font-size: 0.875rem;
   }
   
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .stat-value {
-    font-size: 1.625rem;
+    font-size: 1.375rem;
   }
   
   .stat-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.375rem;
   }
   
   .user-avatar {
@@ -1043,15 +1133,8 @@ const radarOptions = {
     font-size: 1rem;
   }
   
-  .chart-header {
-    padding: 1.25rem 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
   .chart-body {
-    padding: 1.25rem 0.75rem;
+    padding: 1rem 0.5rem;
   }
 }
 </style>
