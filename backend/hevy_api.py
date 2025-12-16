@@ -13,6 +13,7 @@ load_dotenv()  # Load environment variables from .env file
 
 ### Data classes to replace passing many parameters around
 
+
 @dataclass
 class HevyUser:
     auth_token: str
