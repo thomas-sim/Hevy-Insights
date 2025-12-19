@@ -102,8 +102,6 @@ Clone/download the repository and follow these steps:
 # Future Goals
 
 - Display time on Workout cards like "1h 15m" instead of "75 minutes"
-- Translations for other languages
-- Settings page where the user can select translations and other preferences (date format, theme, etc.)
 - Better logging
 - Replace localStorage with HTTP cookie
 
