@@ -25,7 +25,12 @@ export const useHevyCache = defineStore("hevyCache", {
   }),
 
   getters: {
-    username: (state) => state.userAccount?.username || "CSV User",
+    username: (state) => {
+      if (state.dataSource === "csv") {
+        return "CSV User";
+      }
+      return state.userAccount?.username || null;
+    },
     hasWorkouts: (state) => state.workouts.length > 0,
     isCSVMode: (state) => state.dataSource === "csv",
     // Cache workouts for 5 minutes (API only)
@@ -67,7 +72,7 @@ export const useHevyCache = defineStore("hevyCache", {
     },
 
     async fetchWorkouts(force = false) {
-      // In CSV mode, load from localStorage
+      // In CSV mode, load from localStorage - do NOT call API
       if (this.dataSource === "csv") {
         if (this.hasWorkouts && !force) {
           return this.workouts;
@@ -78,12 +83,12 @@ export const useHevyCache = defineStore("hevyCache", {
           try {
             this.workouts = JSON.parse(csvData);
             this.workoutsLastFetched = Date.now();
-            return this.workouts;
           } catch (error) {
             console.error("Failed to parse CSV workouts from localStorage", error);
             this.workouts = [];
           }
         }
+        // Always return here for CSV mode - never call API
         return this.workouts;
       }
 
@@ -102,9 +107,14 @@ export const useHevyCache = defineStore("hevyCache", {
       this.error = null;
 
       try {
-        // Ensure we have username
+        // Ensure we have username for API mode
         if (!this.username) {
           await this.fetchUserAccount();
+        }
+
+        // Safety check: username must exist for API calls
+        if (!this.username) {
+          throw new Error("Username not available for API requests");
         }
 
         const allWorkouts: Workout[] = [];
