@@ -51,7 +51,7 @@ Hevy Insights allows you to log in with your Hevy credentials and fetch your wor
 # Screenshots
 
 > [!NOTE]
-> Screenshots as of **v1.2.0**
+> Screenshots as of **v1.3.0**
 
 *Login Page*
 ![Login Page](/readme_images/login_page.png)
