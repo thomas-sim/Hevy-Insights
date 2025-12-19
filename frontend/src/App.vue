@@ -9,7 +9,7 @@ const route = useRoute();
 const store = useHevyCache();
 const userAccount = computed(() => store.userAccount);
 const showNav = ref(false);
-const appVersion = "v1.2.0"; // Update version as needed
+const appVersion = "v1.3.0"; // Update version as needed
 const isMobileSidebarOpen = ref(false);
 const showTopbar = ref(true);
 const showScrollTop = ref(false);
@@ -515,6 +515,10 @@ main.without-sidebar {
   
   main.with-sidebar {
     padding-top: var(--topbar-height);
+  }
+  
+  main.without-sidebar {
+    padding-top: 0;
   }
   
   .topbar.hidden {
