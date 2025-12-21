@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useHevyCache } from "../stores/hevy_cache";
 import { calculateCSVStats, calculatePRsGrouped, calculateMuscleDistribution } from "../utils/csvCalculator";
 import { Line, Doughnut, Radar } from "vue-chartjs";
@@ -29,6 +30,7 @@ ChartJS.register(
 );
 
 const store = useHevyCache();
+const router = useRouter();
 const chartData = ref<any>(null);
 
 const loading = computed(() => store.isLoadingWorkouts || store.isLoadingUser);
@@ -362,6 +364,113 @@ const totalMinutesAll = computed(() => {
 });
 const totalHoursAll = computed(() => Number((totalMinutesAll.value / 60).toFixed(2)));
 
+// Get exercises with plateaus - show most recent 5
+const plateauExercises = computed(() => {
+  const locale = localStorage.getItem("language") || "en";
+  
+  // Build exercise map similar to Exercises.vue
+  const exerciseMap: Record<string, any> = {};
+  
+  for (const w of workouts.value) {
+    const date = new Date((w.start_time || 0) * 1000);
+    const dayKey = date.toISOString().slice(0,10);
+    
+    for (const ex of (w.exercises || [])) {
+      const title = ex.title || "Unknown Exercise";
+      const id = String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      
+      const entry = (exerciseMap[id] ||= {
+        id,
+        title,
+        de_title: ex.de_title,
+        es_title: ex.es_title,
+        lastDay: null,
+        byDay: {} as Record<string, { maxWeight: number; repsAtMax: number }>,
+      });
+      
+      // Track by day
+      if (!entry.byDay[dayKey]) {
+        entry.byDay[dayKey] = { maxWeight: 0, repsAtMax: 0 };
+      }
+      
+      for (const s of (ex.sets || [])) {
+        const weight = Number((s as any).weight_kg ?? (s as any).weight ?? 0);
+        const reps = Number((s as any).reps ?? 0);
+        
+        if (weight > entry.byDay[dayKey].maxWeight) {
+          entry.byDay[dayKey].maxWeight = weight;
+          entry.byDay[dayKey].repsAtMax = reps;
+        } else if (weight === entry.byDay[dayKey].maxWeight) {
+          entry.byDay[dayKey].repsAtMax = Math.max(entry.byDay[dayKey].repsAtMax, reps);
+        }
+      }
+    }
+  }
+  
+  // Analyze each exercise for plateau
+  const plateaus: Array<{ id: string; title: string; localizedTitle: string; lastDay: string; avgWeight: number; avgReps: number }> = [];
+  
+  for (const ex of Object.values(exerciseMap)) {
+    const days = Object.keys(ex.byDay).sort();
+    if (days.length < 5) continue;
+    
+    // Check if active (trained in last 60 days)
+    const lastDay = days[days.length - 1];
+    if (!lastDay) continue;
+    
+    const lastDate = new Date(lastDay);
+    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince > 60) continue;
+    
+    // Get last 5 sessions
+    const last5Days = days.slice(-5);
+    const sessions = last5Days.map(d => ({
+      day: d,
+      maxWeight: ex.byDay[d]?.maxWeight || 0,
+      repsAtMax: ex.byDay[d]?.repsAtMax || 0,
+    }));
+    
+    const weights = sessions.map(s => s.maxWeight);
+    const reps = sessions.map(s => s.repsAtMax);
+    const weightRange = Math.max(...weights) - Math.min(...weights);
+    const repsRange = Math.max(...reps) - Math.min(...reps);
+    const avgWeight = weights.reduce((a, b) => a + b, 0) / weights.length;
+    const avgReps = Math.round(reps.reduce((a, b) => a + b, 0) / reps.length);
+    
+    // Get localized title
+    let localizedTitle = ex.title;
+    if (locale === "de" && ex.de_title) {
+      localizedTitle = ex.de_title;
+    } else if (locale === "es" && ex.es_title) {
+      localizedTitle = ex.es_title;
+    }
+    
+    // Plateau detection: weight within 0.5kg and reps within 1
+    if (weightRange <= 0.5 && repsRange <= 1) {
+      plateaus.push({
+        id: ex.id,
+        title: ex.title,
+        localizedTitle,
+        lastDay,
+        avgWeight,
+        avgReps
+      });
+    }
+  }
+  
+  // Sort by most recent first, return top 5
+  return plateaus
+    .sort((a, b) => new Date(b.lastDay).getTime() - new Date(a.lastDay).getTime())
+    .slice(0, 5);
+});
+// Navigate to Exercises page and scroll to specific exercise
+const navigateToExercise = (exerciseId: string) => {
+  router.push({
+    name: "Exercises",
+    hash: `#${exerciseId}`
+  });
+};
+
 const fetchData = async () => {
   try {
     await store.fetchUserAccount();
@@ -598,6 +707,25 @@ onMounted(() => {
           <div class="kpi-icon">🔥</div>
           <div class="kpi-value">{{ workoutStreakWeeks }}</div>
           <div class="kpi-label">{{ $t("dashboard.stats.workoutStreak") }}</div>
+        </div>
+      </div>
+
+      <!-- Plateau Alerts (if any) -->
+      <div v-if="plateauExercises.length > 0" class="plateau-section">
+        <h3 class="plateau-section-title">⏸️ Plateau Detected</h3>
+        <div class="plateau-grid">
+          <div 
+            v-for="plateau in plateauExercises" 
+            :key="plateau.id"
+            class="plateau-card"
+            @click="navigateToExercise(plateau.id)"
+          >
+            <div class="plateau-icon">⏸️</div>
+            <div class="plateau-content">
+              <div class="plateau-title">{{ plateau.localizedTitle }}</div>
+              <div class="plateau-meta">{{ plateau.avgWeight.toFixed(1) }} kg × {{ plateau.avgReps }} reps</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1174,6 +1302,73 @@ onMounted(() => {
   line-height: 1.2;
 }
 
+/* Plateau Alert Section */
+.plateau-section {
+  margin-bottom: 1.5rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.plateau-section-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.plateau-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.plateau-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.plateau-card:hover {
+  transform: translateY(-2px);
+  border-color: #fbbf24;
+  box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2);
+  background: rgba(15, 23, 42, 1);
+}
+
+.plateau-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.plateau-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.plateau-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateau-meta {
+  font-size: 0.8rem;
+  color: #fbbf24;
+  font-weight: 500;
+}
+
 /* Dashboard Sections (Expandable/Collapsible) */
 .dashboard-section {
   margin-bottom: 1rem;
@@ -1287,6 +1482,21 @@ onMounted(() => {
 .insight-meta {
   font-size: 0.875rem;
   color: var(--text-secondary);
+}
+
+.plateau-card {
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.plateau-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 12px 24px rgba(251, 191, 36, 0.2);
+}
+
+.plateau-card .insight-icon {
+  color: rgba(251, 191, 36, 0.9);
 }
 
 /* Expand/Collapse Animation */
