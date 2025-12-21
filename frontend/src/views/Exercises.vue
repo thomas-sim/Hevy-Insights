@@ -43,6 +43,8 @@ const secondaryColor = computed(() => {
 const expanded = ref<Record<string, boolean>>({});
 // Search by exercise name
 const search = ref("");
+// Plateau filter state
+const plateauFilter = ref<string | null>(null);
 
 // Graph filters per exercise (stores timeRange and chartType for each graph)
 type GraphRange = 30 | 60 | 90 | 365 | 0; // days, 0 = all time
@@ -296,11 +298,22 @@ const exercises = computed(() => {
   return list;
 });
 
-// Filtered by search term
+// Filtered by search term and plateau filter
 const filteredExercises = computed(() => {
+  let filtered = exercises.value;
+  
+  // Apply search filter
   const q = search.value.trim().toLowerCase();
-  if (!q) return exercises.value;
-  return exercises.value.filter((ex: any) => (ex.title || "").toLowerCase().includes(q));
+  if (q) {
+    filtered = filtered.filter((ex: any) => (ex.title || "").toLowerCase().includes(q));
+  }
+  
+  // Apply plateau filter
+  if (plateauFilter.value) {
+    filtered = filtered.filter((ex: any) => ex.strengthInsight?.type === plateauFilter.value);
+  }
+  
+  return filtered;
 });
 
 // Exercise statistics
@@ -587,7 +600,11 @@ const barChartOptions = {
       
       <!-- Exercise Statistics Summary -->
       <div class="exercise-stats-summary">
-        <div class="stat-pill">
+        <div 
+          class="stat-pill clickable"
+          :class="{ selected: plateauFilter === null }"
+          @click="plateauFilter = null"
+        >
           <span class="stat-label">{{ $t("exercises.summary.total") }}:</span>
           <span class="stat-value">{{ exerciseStats.total }}</span>
         </div>
@@ -595,15 +612,30 @@ const barChartOptions = {
           <span class="stat-label">{{ $t("exercises.summary.active") }}:</span>
           <span class="stat-value">{{ exerciseStats.active }}</span>
         </div>
-        <div class="stat-pill stat-gaining" v-if="exerciseStats.gaining > 0">
+        <div 
+          class="stat-pill stat-gaining clickable" 
+          v-if="exerciseStats.gaining > 0"
+          :class="{ selected: plateauFilter === 'gaining' }"
+          @click="plateauFilter = plateauFilter === 'gaining' ? null : 'gaining'"
+        >
           <span class="stat-icon">📈</span>
           <span class="stat-value">{{ exerciseStats.gaining }}</span>
         </div>
-        <div class="stat-pill stat-plateau" v-if="exerciseStats.plateau > 0">
+        <div 
+          class="stat-pill stat-plateau clickable" 
+          v-if="exerciseStats.plateau > 0"
+          :class="{ selected: plateauFilter === 'plateau' }"
+          @click="plateauFilter = plateauFilter === 'plateau' ? null : 'plateau'"
+        >
           <span class="stat-icon">⏸️</span>
           <span class="stat-value">{{ exerciseStats.plateau }}</span>
         </div>
-        <div class="stat-pill stat-losing" v-if="exerciseStats.losing > 0">
+        <div 
+          class="stat-pill stat-losing clickable" 
+          v-if="exerciseStats.losing > 0"
+          :class="{ selected: plateauFilter === 'losing' }"
+          @click="plateauFilter = plateauFilter === 'losing' ? null : 'losing'"
+        >
           <span class="stat-icon">📉</span>
           <span class="stat-value">{{ exerciseStats.losing }}</span>
         </div>
@@ -1006,6 +1038,39 @@ const barChartOptions = {
   margin-bottom: 1.5rem;
 }
 
+.search-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Desktop: horizontal layout with search and stats on same row */
+@media (min-width: 769px) {
+  .search-section {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  
+  .search-row {
+    flex: 1;
+    max-width: 600px;
+  }
+  
+  .search-input {
+    flex: 1;
+    min-width: 250px;
+  }
+  
+  .exercise-stats-summary {
+    justify-content: flex-end;
+    flex: 1;
+  }
+}
+
 .search-input {
   background: var(--bg-card);
   color: var(--text-primary);
@@ -1062,6 +1127,30 @@ const barChartOptions = {
 
 .stat-pill .stat-icon {
   font-size: 1.1rem;
+}
+
+.stat-pill.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.stat-pill.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.stat-pill.clickable:active {
+  transform: translateY(0);
+}
+
+.stat-pill.selected {
+  border-width: 2.5px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transform: scale(1.05);
+}
+
+.stat-pill.selected:hover {
+  transform: scale(1.05) translateY(-2px);
 }
 
 .stat-pill.stat-active {
