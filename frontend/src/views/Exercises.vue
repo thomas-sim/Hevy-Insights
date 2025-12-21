@@ -80,18 +80,8 @@ onMounted(async () => {
 function analyzeStrengthProgress(ex: any) {
   const days = Object.keys(ex.byDay || {}).sort();
   
-  // Check for insufficient data - need at least 5 sessions
-  if (days.length < 5) {
-    return {
-      type: "insufficient",
-      message: t("exercises.insights.insufficient", {
-        sessions: days.length,
-        needed: 5
-      })
-    };
-  }
-  
-  // Check if inactive (last session more than 60 days ago)
+  // Check if inactive (last session more than 60 days ago) FIRST
+  // This should be checked before insufficient data check
   const lastDay = days[days.length - 1];
   if (!lastDay) return null;
   
@@ -103,6 +93,17 @@ function analyzeStrengthProgress(ex: any) {
       type: "inactive",
       message: t("exercises.insights.inactive", {
         days: daysSinceLastWorkout
+      })
+    };
+  }
+  
+  // Check for insufficient data - need at least 5 sessions
+  if (days.length < 5) {
+    return {
+      type: "insufficient",
+      message: t("exercises.insights.insufficient", {
+        sessions: days.length,
+        needed: 5
       })
     };
   }
