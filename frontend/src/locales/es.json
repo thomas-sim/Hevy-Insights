@@ -150,6 +150,12 @@
       "title": "Idioma",
       "description": "Selecciona tu idioma preferido"
     },
+    "dateTimeFormat": {
+      "title": "Formatos de Fecha y Hora",
+      "description": "Personaliza cómo se muestran las fechas y horas",
+      "dateFormat": "Formato de Fecha",
+      "graphAxisFormat": "Formato de Eje de Gráfico"
+    },
     "dataManagement": {
       "title": "Gestión de Datos",
       "description": "Ver información sobre tu fuente de datos",

@@ -150,6 +150,12 @@
       "title": "Sprache",
       "description": "Wählen Sie Ihre bevorzugte Sprache"
     },
+    "dateTimeFormat": {
+      "title": "Datums- & Zeitformate",
+      "description": "Passen Sie an, wie Datum und Uhrzeit angezeigt werden",
+      "dateFormat": "Datumsformat",
+      "graphAxisFormat": "Diagramm-Achsenformat"
+    },
     "dataManagement": {
       "title": "Datenverwaltung",
       "description": "Zeigen Sie Informationen über Ihre Datenquelle an",

@@ -150,6 +150,12 @@
       "title": "Language",
       "description": "Select your preferred language"
     },
+    "dateTimeFormat": {
+      "title": "Date & Time Formats",
+      "description": "Customize how dates and times are displayed",
+      "dateFormat": "Date Format",
+      "graphAxisFormat": "Graph Axis Format"
+    },
     "dataManagement": {
       "title": "Data Management",
       "description": "View information about your data source",

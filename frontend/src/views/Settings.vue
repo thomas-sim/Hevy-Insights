@@ -78,12 +78,43 @@ watch(selectedLanguage, (newLang) => {
   localStorage.setItem("language", newLang);
 });
 
+// Date/Time Format settings
+const dateFormats = [
+  { label: "YYYY-MM-DD (2025-12-21)", value: "iso" },
+  { label: "DD.MM.YYYY (21.12.2025)", value: "eu" },
+  { label: "MM/DD/YYYY (12/21/2025)", value: "us" },
+  { label: "DD/MM/YYYY (21/12/2025)", value: "uk" },
+];
+
+const graphAxisFormats = [
+  { label: "YYYY-MM (2025-12)", value: "year-month" },
+  { label: "MM-YYYY (12-2025)", value: "month-year" },
+  { label: "MMM YYYY (Dec 2025)", value: "short" },
+  { label: "Month YYYY (December 2025)", value: "long" },
+];
+
+const selectedDateFormat = ref<string>(localStorage.getItem("date-format") || "iso");
+const selectedGraphAxisFormat = ref<string>(localStorage.getItem("graph-axis-format") || "year-month");
+
+// Watch for format changes
+watch(selectedDateFormat, (newFormat) => {
+  localStorage.setItem("date-format", newFormat);
+});
+
+watch(selectedGraphAxisFormat, (newFormat) => {
+  localStorage.setItem("graph-axis-format", newFormat);
+});
+
 // Reset to default
 const resetSettings = () => {
   selectedTheme.value = "default";
   selectedLanguage.value = "en";
+  selectedDateFormat.value = "iso";
+  selectedGraphAxisFormat.value = "year-month";
   locale.value = "en";
   localStorage.setItem("language", "en");
+  localStorage.setItem("date-format", "iso");
+  localStorage.setItem("graph-axis-format", "year-month");
 };
 </script>
 
@@ -158,6 +189,54 @@ const resetSettings = () => {
             <span class="language-flag">{{ lang.flag }}</span>
             <div class="language-name">{{ lang.name }}</div>
             <div v-if="selectedLanguage === lang.code" class="language-check">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date/Time Format Section -->
+      <div class="settings-section">
+        <div class="section-header">
+          <h2>📅 {{ t("settings.dateTimeFormat.title") }}</h2>
+          <p class="section-description">{{ t("settings.dateTimeFormat.description") }}</p>
+        </div>
+
+        <div class="format-subsection">
+          <h3>{{ t("settings.dateTimeFormat.dateFormat") }}</h3>
+          <div class="format-options">
+            <label
+              v-for="format in dateFormats"
+              :key="format.value"
+              :class="['format-option', { active: selectedDateFormat === format.value }]"
+            >
+              <input
+                type="radio"
+                :value="format.value"
+                v-model="selectedDateFormat"
+                class="format-radio"
+              />
+              <span class="format-label">{{ format.label }}</span>
+              <div v-if="selectedDateFormat === format.value" class="format-check">✓</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="format-subsection">
+          <h3>{{ t("settings.dateTimeFormat.graphAxisFormat") }}</h3>
+          <div class="format-options">
+            <label
+              v-for="format in graphAxisFormats"
+              :key="format.value"
+              :class="['format-option', { active: selectedGraphAxisFormat === format.value }]"
+            >
+              <input
+                type="radio"
+                :value="format.value"
+                v-model="selectedGraphAxisFormat"
+                class="format-radio"
+              />
+              <span class="format-label">{{ format.label }}</span>
+              <div v-if="selectedGraphAxisFormat === format.value" class="format-check">✓</div>
+            </label>
           </div>
         </div>
       </div>
@@ -500,7 +579,95 @@ const resetSettings = () => {
   font-size: 1rem;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #10b981) 40%, transparent);
 }
+/* Date/Time Format Options */
+.format-subsection {
+  margin-bottom: 2rem;
+}
 
+.format-subsection:last-child {
+  margin-bottom: 0;
+}
+
+.format-subsection h3 {
+  margin: 0 0 1rem;
+  color: #f8fafc;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.format-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.format-option {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(51, 65, 85, 0.5);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.format-option:hover {
+  border-color: color-mix(in srgb, var(--color-primary, #10b981) 50%, transparent);
+  transform: translateX(4px);
+}
+
+.format-option.active {
+  border-color: var(--color-primary, #10b981);
+  background: color-mix(in srgb, var(--color-primary, #10b981) 10%, transparent);
+}
+
+.format-radio {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(148, 163, 184, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.format-radio:checked {
+  border-color: var(--color-primary, #10b981);
+  background: var(--color-primary, #10b981);
+}
+
+.format-radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+}
+
+.format-label {
+  flex: 1;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.format-check {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: var(--color-primary, #10b981);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
 /* Data Management */
 .data-info-card {
   background: rgba(0, 0, 0, 0.3);
