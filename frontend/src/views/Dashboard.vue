@@ -1514,10 +1514,20 @@ onMounted(() => {
     grid-template-columns: repeat(2, 1fr);
   }
   
+  /* Reduce nesting padding on mobile for charts */
+  .section-content {
+    padding: 1rem 0.5rem;
+  }
+  
+  .chart-container {
+    border-radius: 12px;
+  }
+  
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
+    padding: 0.75rem 1rem;
   }
   
   .chart-filters {
@@ -1526,19 +1536,20 @@ onMounted(() => {
   }
   
   .chart-body {
-    padding: 1rem 0.75rem;
-    min-height: 280px;
+    padding: 0.75rem 0.5rem;
+    min-height: 260px;
   }
   
   .doughnut-body,
   .radar-body {
-    min-height: 280px;
+    min-height: 260px;
+    padding: 1rem 0.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .dashboard {
-    padding: 1rem;
+    padding: 1rem 0.5rem;
   }
   
   .title-section h1 {
@@ -1565,8 +1576,33 @@ onMounted(() => {
     font-size: 1rem;
   }
   
+  /* Further reduce padding on smallest screens */
+  .section-content {
+    padding: 0.75rem 0.25rem;
+  }
+  
+  .chart-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
   .chart-body {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 0.25rem;
+    min-height: 240px;
+  }
+  
+  .doughnut-body,
+  .radar-body {
+    padding: 0.75rem 0.25rem;
+    min-height: 240px;
+  }
+  
+  /* Make KPI cards more compact */
+  .kpi-grid {
+    gap: 0.75rem;
+  }
+  
+  .kpi-card {
+    padding: 1rem 0.75rem;
   }
 }
 </style>
