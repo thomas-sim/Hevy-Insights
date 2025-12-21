@@ -41,13 +41,12 @@ const workouts = computed(() => store.workouts);
 
 // Collapsible sections state (saved to localStorage)
 const expandedSections = ref<Record<string, boolean>>({
-  kpis: true, // KPI cards always shown by default
+  plateaus: true, // Plateaus expanded by default
+  prs: false, // PRs collapsed by default
   trainingAnalytics: JSON.parse(localStorage.getItem("dashboard-section-trainingAnalytics") || "true"),
   exerciseInsights: JSON.parse(localStorage.getItem("dashboard-section-exerciseInsights") || "true"),
   calendarViews: JSON.parse(localStorage.getItem("dashboard-section-calendarViews") || "true"),
   muscleDistribution: JSON.parse(localStorage.getItem("dashboard-section-muscleDistribution") || "true"),
-  plateaus: true, // Plateaus expanded by default
-  prs: false, // PRs collapsed by default
 });
 
 // Toggle section and save to localStorage
@@ -66,10 +65,10 @@ const csvStats = computed(() => {
 
 // Get theme colors from CSS variables
 const primaryColor = computed(() => {
-  return getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#10b981';
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim() || "#10b981";
 });
 const secondaryColor = computed(() => {
-  return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || '#06b6d4';
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-secondary").trim() || "#06b6d4";
 });
 
 // ---------- Individual Chart Range Filters ----------
@@ -563,7 +562,7 @@ const plateauExercises = computed(() => {
     .slice(0, 5);
 });
 
-// Get recent PRs - show last 10 PRs achieved
+// Get recent PRs - show last 5 PRs achieved
 const recentPRs = computed(() => {
   const prsMap = new Map<string, { exercise: string; type: string; value: number; date: string }>();
   
