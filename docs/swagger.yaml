@@ -1236,6 +1236,21 @@ paths:
                 properties:
                   is_pro:
                     type: boolean
+                  active_subscription:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        managing_store:
+                          type: string
+                          example: app_store
+                        type:
+                          type: string
+                          example: monthly
+                        grace_period_expires_date:
+                          type: string
+                        expires_date:
+                          type: string              
   /feed_workouts_paged:
     get:
       tags: [Workouts]
