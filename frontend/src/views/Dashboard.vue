@@ -980,7 +980,6 @@ onMounted(() => {
                 <div class="insight-content">
                   <div class="insight-label">{{ $t('dashboard.stats.longestWorkout') }}</div>
                   <div class="insight-value">{{ longestWorkout.minutes }} min</div>
-                  <div class="insight-meta">{{ longestWorkout.date }}</div>
                 </div>
               </div>
 
