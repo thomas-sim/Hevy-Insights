@@ -194,7 +194,7 @@ const resetSettings = () => {
       </div>
 
       <!-- Date/Time Format Section -->
-      <div class="settings-section">
+      <!--  <div class="settings-section">
         <div class="section-header">
           <h2>📅 {{ t("settings.dateTimeFormat.title") }}</h2>
           <p class="section-description">{{ t("settings.dateTimeFormat.description") }}</p>
@@ -239,7 +239,7 @@ const resetSettings = () => {
             </label>
           </div>
         </div>
-      </div>
+      </div>  -->
 
       <!-- Data Management Section -->
       <div class="settings-section">
