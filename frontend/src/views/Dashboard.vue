@@ -1382,7 +1382,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
@@ -1395,15 +1395,15 @@ onMounted(() => {
 .section-title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .section-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .section-title h2 {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
