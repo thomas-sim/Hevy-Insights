@@ -23,6 +23,7 @@ Hevy Insights allows you to log in with your Hevy credentials and fetch your wor
 # Table of Contents <!-- omit from toc -->
 
 - [Features](#features)
+  - [Plateau \& Strength Detection](#plateau--strength-detection)
 - [Screenshots](#screenshots)
 - [Usage](#usage)
   - [Hosted Online](#hosted-online)
@@ -45,8 +46,44 @@ Hevy Insights allows you to log in with your Hevy credentials and fetch your wor
 - **Dashboard**: Interactive charts and statistics of your workouts, including volume, muscle distribution and hours trained.
 - **Workout History**: Workout logs with detailed exercise information up to the date of account creation - card or list design.
 - **Exercises**: View all exercises with video thumbnails and detailed stats.
+  - **Plateau Detection**: Automatically detects when your performance has plateaued on an exercise
+  - **Strength Tracking**: Shows if you're gaining or losing strength over your recent sessions
 - **Custom Settings**: Individualize your experience when using Hevy Insights.
 - **Languages**: Language support for 🇺🇸, 🇩🇪 and 🇪🇸.
+
+## Plateau & Strength Detection
+
+Hevy Insights includes an intelligent analysis system that tracks your performance across the **last 5 sessions** for each exercise and provides real-time feedback:
+
+### Detection Types <!-- omit from toc -->
+
+- **🟡 Plateau**: Your performance has stayed relatively consistent
+  - Triggered when weight stays within **~0.5kg** and reps within **~1 rep** across at least 5 sessions
+  
+- **🟢 Gaining Strength**: You're making progress!
+  - Triggered when weight increases by **>2kg** OR reps increase by **>2** (with stable/increasing weight) across at least 5 sessions
+  
+- **🔴 Declining Strength**: Performance is decreasing
+  - Triggered when weight decreases by **>2kg** OR reps decrease by **>2** (with stable/ decreasing weight) across at least 5 sessions
+  
+- **⚪ Insufficient Data**: Not enough workout history yet
+  - Displayed when an exercise has been performed fewer than **5 times**
+
+### How It Works <!-- omit from toc -->
+
+The analysis algorithm:
+
+1. Collects data from your last 5 workout sessions for each exercise
+2. Tracks the **maximum weight** and **reps at max weight** for each session
+3. Compares the first half of sessions against the second half to identify trends
+4. Displays a colored badge on each exercise card with the current status
+
+This feature helps you identify when it's time to:
+
+- **Increase weight** (when plateaued)
+- **Celebrate progress** (when gaining)
+- **Take recovery time** or **check form** (when declining)
+- **Build more history** (when insufficient data)
 
 # Screenshots
 
