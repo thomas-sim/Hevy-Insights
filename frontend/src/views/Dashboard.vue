@@ -87,6 +87,7 @@ const prsOverTime_Range = ref<Range>("6m");
 const prsOverTime_Display = ref<DisplayStyle>("mo");
 
 const muscleDistribution_Range = ref<Range>("all");
+const muscleDistribution_Grouping = ref<"groups" | "muscles">("groups");
   
 // ---------- Helper functions for date keys ----------
 
@@ -105,6 +106,45 @@ const weekKey = (d: Date) => {
 const monthKey = (d: Date) => {
   return d.toISOString().slice(0,7); // "YYYY-MM"
 };
+
+// Map individual muscles to larger groups
+function groupMuscles(muscleGroup: string): string {
+  const muscle = muscleGroup.toLowerCase();
+  
+  // Arms
+  if (muscle.includes("bicep") || muscle.includes("tricep") || muscle.includes("forearm")) {
+    return "Arms";
+  }
+  
+  // Back
+  if (muscle.includes("back") || muscle.includes("lat") || muscle.includes("rhomboid") || muscle.includes("trap")) {
+    return "Back";
+  }
+  
+  // Chest
+  if (muscle.includes("chest") || muscle.includes("pec")) {
+    return "Chest";
+  }
+  
+  // Core
+  if (muscle.includes("abdominal") || muscle.includes("core") || muscle.includes("oblique")) {
+    return "Core";
+  }
+  
+  // Legs
+  if (muscle.includes("quad") || muscle.includes("hamstring") || muscle.includes("glute") || 
+      muscle.includes("calves") || muscle.includes("leg") || muscle.includes("adductor") || muscle.includes("abductor")) {
+    return "Legs";
+  }
+  
+  // Shoulders
+  if (muscle.includes("shoulder") || muscle.includes("delt")) {
+    return "Shoulders";
+  }
+  
+  // Default: return original
+  return muscleGroup;
+}
 
 // Get calendar week number (ISO 8601)
 const getWeekNumber = (d: Date): number => {
@@ -283,7 +323,9 @@ const muscleDistribution_Data = computed(() => {
   
   for (const w of filtered) {
     for (const ex of (w.exercises || [])) {
-      const muscleGroup = ex.muscle_group || "Unknown";
+      const rawMuscle = ex.muscle_group || "Unknown";
+      // Apply grouping based on filter setting
+      const muscleGroup = muscleDistribution_Grouping.value === "groups" ? groupMuscles(rawMuscle) : rawMuscle;
       const setsCount = ex.sets?.length || 0;
       muscleGroups[muscleGroup] = (muscleGroups[muscleGroup] || 0) + setsCount;
     }
@@ -1170,11 +1212,15 @@ onMounted(() => {
                       <button @click="muscleDistribution_Range = '3m'" :class="['filter-btn', { active: muscleDistribution_Range === '3m' }]">3M</button>
                       <button @click="muscleDistribution_Range = '1m'" :class="['filter-btn', { active: muscleDistribution_Range === '1m' }]">1M</button>
                     </div>
+                    <div class="filter-group">
+                      <button @click="muscleDistribution_Grouping = 'groups'" :class="['filter-btn', { active: muscleDistribution_Grouping === 'groups' }]" title="Muscle Groups">Groups</button>
+                      <button @click="muscleDistribution_Grouping = 'muscles'" :class="['filter-btn', { active: muscleDistribution_Grouping === 'muscles' }]" title="Individual Muscles">Muscles</button>
+                    </div>
                   </div>
                 </div>
                 <div class="chart-body doughnut-body">
                   <Doughnut 
-                    :key="'muscle-' + muscleDistribution_Range"
+                    :key="'muscle-' + muscleDistribution_Range + '-' + muscleDistribution_Grouping"
                     :data="{
                       labels: muscleDistribution_Data.labels,
                       datasets: [{
