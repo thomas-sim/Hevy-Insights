@@ -1174,7 +1174,11 @@ const barChartOptions = {
 .stat-value { color: var(--text-primary); font-weight: 600; }
 
 .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
-.graph { display: flex; flex-direction: column; }
+.graph { 
+  display: flex; 
+  flex-direction: column;
+  overflow: hidden; /* Prevent chart overflow */
+}
 .graph-header { 
   display: flex; 
   justify-content: space-between; 
@@ -1243,8 +1247,22 @@ const barChartOptions = {
   opacity: 1;
   background: color-mix(in srgb, var(--color-primary, #10b981) 20%, transparent);
 }
-.graph-grid { border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; background: var(--bg-secondary); }
-.chart-container { height: 220px; }
+.graph-grid { 
+  border: 1.5px solid color-mix(in srgb, var(--color-primary, #10b981) 20%, var(--border-color)); 
+  border-radius: 12px; 
+  padding: 1rem; 
+  background: rgba(15, 23, 42, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+.graph-grid:hover {
+  border-color: color-mix(in srgb, var(--color-primary, #10b981) 30%, var(--border-color));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
+}
+.chart-container { 
+  height: 220px;
+  overflow: hidden; /* Prevent overflow on mobile when switching chart types */
+}
 
 .top-sets h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--text-primary); }
 .sets-table { width: 100%; border-collapse: collapse; }
@@ -1259,6 +1277,11 @@ const barChartOptions = {
 @media (max-width: 900px) {
   .media-and-stats { grid-template-columns: 1fr; }
   .graphs { grid-template-columns: 1fr; }
+  
+  /* Ensure charts don't overflow on mobile */
+  .graph-grid {
+    overflow-x: auto;
+  }
 }
 
 @media (max-width: 640px) {
