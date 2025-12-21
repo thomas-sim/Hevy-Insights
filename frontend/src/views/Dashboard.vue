@@ -3,13 +3,14 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useHevyCache } from "../stores/hevy_cache";
 import { calculateCSVStats, calculatePRsGrouped, calculateMuscleDistribution } from "../utils/csvCalculator";
-import { Line, Doughnut, Radar } from "vue-chartjs";
+import { Line, Doughnut, Radar, Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   RadialLinearScale,
   Title,
@@ -22,6 +23,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   RadialLinearScale,
   Title,
@@ -334,6 +336,59 @@ const muscleDistribution_Data = computed(() => {
   return {
     labels: Object.keys(muscleGroups),
     data: Object.values(muscleGroups)
+  };
+});
+
+// Muscle Regions (Stacked Bar Chart)
+const muscleRegionsPerMonth_Range = ref<Range>("1y");
+const muscleRegionsPerMonth_Display = ref<DisplayStyle>("mo");
+const muscleRegionsPerMonth_Grouping = ref<"groups" | "muscles">("groups");
+
+const muscleRegionsPerMonth_Data = computed(() => {
+  const filtered = filterByRange(muscleRegionsPerMonth_Range.value);
+  const useWeeks = muscleRegionsPerMonth_Display.value === "wk";
+  
+  // Group by week or month and muscle group
+  const periodMuscleData: Record<string, Record<string, number>> = {};
+  const allMuscles = new Set<string>();
+  
+  for (const w of filtered) {
+    const date = new Date((w.start_time || 0) * 1000);
+    const period = useWeeks ? weekKey(date) : monthKey(date);
+    
+    if (!periodMuscleData[period]) {
+      periodMuscleData[period] = {};
+    }
+    
+    for (const ex of (w.exercises || [])) {
+      const rawMuscle = ex.muscle_group || "Unknown";
+      // Apply grouping based on filter setting
+      const muscleGroup = muscleRegionsPerMonth_Grouping.value === "groups" ? groupMuscles(rawMuscle) : rawMuscle;
+      allMuscles.add(muscleGroup);
+      const setsCount = ex.sets?.length || 0;
+      periodMuscleData[period][muscleGroup] = (periodMuscleData[period][muscleGroup] || 0) + setsCount;
+    }
+  }
+  
+  // Sort periods
+  const periods = Object.keys(periodMuscleData).sort();
+  const muscleGroups = Array.from(allMuscles).sort();
+  
+  // Create datasets for each muscle group
+  const datasets = muscleGroups.map((muscle, index) => {
+    const colors = generateGradientColors(muscleGroups.length);
+    return {
+      label: muscle,
+      data: periods.map(period => (periodMuscleData[period] || {})[muscle] || 0),
+      backgroundColor: colors[index],
+      borderColor: colors[index],
+      borderWidth: 1
+    };
+  });
+  
+  return {
+    labels: periods.map(p => formatPeriodLabel(p, muscleRegionsPerMonth_Display.value)),
+    datasets
   };
 });
 
@@ -1230,6 +1285,87 @@ onMounted(() => {
                       }]
                     }" 
                     :options="doughnutOptions" 
+                  />
+                </div>
+              </div>
+              
+              <!-- Muscle Regions Per Month Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>📊 Muscle Regions</h3>
+                    <span class="chart-subtitle">Stacked breakdown by period</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="muscleRegionsPerMonth_Range = 'all'" :class="['filter-btn', { active: muscleRegionsPerMonth_Range === 'all' }]">All</button>
+                      <button @click="muscleRegionsPerMonth_Range = '1y'" :class="['filter-btn', { active: muscleRegionsPerMonth_Range === '1y' }]">1Y</button>
+                      <button @click="muscleRegionsPerMonth_Range = '6m'" :class="['filter-btn', { active: muscleRegionsPerMonth_Range === '6m' }]">6M</button>
+                      <button @click="muscleRegionsPerMonth_Range = '3m'" :class="['filter-btn', { active: muscleRegionsPerMonth_Range === '3m' }]">3M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="muscleRegionsPerMonth_Display = 'mo'" :class="['filter-btn', { active: muscleRegionsPerMonth_Display === 'mo' }]">Mo</button>
+                      <button @click="muscleRegionsPerMonth_Display = 'wk'" :class="['filter-btn', { active: muscleRegionsPerMonth_Display === 'wk' }]">Wk</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="muscleRegionsPerMonth_Grouping = 'groups'" :class="['filter-btn', { active: muscleRegionsPerMonth_Grouping === 'groups' }]" title="Muscle Groups">Groups</button>
+                      <button @click="muscleRegionsPerMonth_Grouping = 'muscles'" :class="['filter-btn', { active: muscleRegionsPerMonth_Grouping === 'muscles' }]" title="Individual Muscles">Muscles</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Bar
+                    :key="'muscle-regions-' + muscleRegionsPerMonth_Range + '-' + muscleRegionsPerMonth_Display + '-' + muscleRegionsPerMonth_Grouping"
+                    :data="muscleRegionsPerMonth_Data"
+                    :options="{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'index' as const,
+                        intersect: false
+                      },
+                      scales: {
+                        x: {
+                          stacked: true,
+                          grid: { display: false },
+                          ticks: { color: '#9A9A9A' }
+                        },
+                        y: {
+                          stacked: true,
+                          grid: { color: '#2b3553' },
+                          ticks: { color: '#9A9A9A' },
+                          title: {
+                            display: true,
+                            text: 'Sets',
+                            color: '#9A9A9A'
+                          }
+                        }
+                      },
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'bottom' as const,
+                          labels: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 12
+                          }
+                        },
+                        tooltip: {
+                          mode: 'index' as const,
+                          intersect: false,
+                          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                          borderColor: 'rgba(51, 65, 85, 0.6)',
+                          borderWidth: 1,
+                          titleColor: '#f8fafc',
+                          bodyColor: '#cbd5e1',
+                          padding: 12,
+                          displayColors: true
+                        }
+                      }
+                    }"
                   />
                 </div>
               </div>
