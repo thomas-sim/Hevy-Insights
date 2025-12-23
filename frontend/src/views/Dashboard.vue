@@ -42,7 +42,7 @@ const workouts = computed(() => store.workouts);
 // Collapsible sections state (saved to localStorage)
 const expandedSections = ref<Record<string, boolean>>({
   plateaus: true, // Plateaus expanded by default
-  prs: false, // PRs collapsed by default
+  prs: true, // PRs expanded by default
   trainingAnalytics: JSON.parse(localStorage.getItem("dashboard-section-trainingAnalytics") || "true"),
   exerciseInsights: JSON.parse(localStorage.getItem("dashboard-section-exerciseInsights") || "true"),
   calendarViews: JSON.parse(localStorage.getItem("dashboard-section-calendarViews") || "true"),
