@@ -303,7 +303,7 @@ onMounted(async () => { await store.fetchWorkouts(); });
             <div class="exercise-grid">
               <div v-for="(exercise, exIdx) in workout.exercises" :key="exercise.id" class="exercise">
                 <div class="exercise-header">
-                  <span class="pill pill-blue">#{{ exIdx + 1 }}</span>
+                  <span class="pill pill-blue">#{{ (+exIdx) + 1 }}</span>
                   <img v-if="exercise.thumbnail_url" :src="exercise.thumbnail_url" class="thumb" alt="Exercise thumbnail" />
                   <div class="exercise-title">{{ exercise.title || "Unknown Exercise" }}</div>
                 </div>
