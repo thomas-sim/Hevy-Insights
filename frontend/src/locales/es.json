@@ -46,6 +46,14 @@
   "dashboard": {
     "title": "Panel",
     "subtitle": "Bienvenido de nuevo",
+    "sections": {
+      "plateausDetected": "Mesetas detectadas ({count})",
+      "recentPRs": "Récords personales recientes ({count})",
+      "trainingAnalysis": "Análisis de entrenamiento",
+      "exerciseInsights": "Información de ejercicios",
+      "calendarViews": "Vistas de calendario",
+      "muscleDistribution": "Distribución muscular"
+    },
     "stats": {
       "totalWorkouts": "Entrenamientos Totales",
       "totalVolume": "Volumen Total (kg)",
@@ -67,7 +75,9 @@
       "weeklyRhythm": "Ritmo Semanal",
       "weeklyRhythmDescription": "Frecuencia de entrenamiento por día",
       "muscleDistribution": "Distribución Muscular",
-      "muscleDistributionDescription": "Series por grupo muscular"
+      "muscleDistributionDescription": "Series por grupo muscular",
+      "muscleRegions": "Regiones Musculares",
+      "muscleRegionsDescription": "Desglose apilado por período"
     }
   },
   "workouts": {
@@ -81,9 +91,35 @@
     "subtitle": "Análisis detallado y seguimiento de progreso para cada ejercicio.",
     "searchFilter": "Buscar ejercicios por nombre...",
     "personalRecords": "Récords Personales",
+    "neverTrained": "Nunca entrenado",
+    "summary": {
+      "total": "Total",
+      "active": "Activo"
+    },
+    "lastTrained": {
+      "today": "Entrenado hoy",
+      "yesterday": "Entrenado ayer",
+      "daysAgo": "Entrenado hace {days} días",
+      "weeksAgo": "Entrenado hace {weeks} semana(s)",
+      "monthsAgo": "Entrenado hace {months} mes(es)"
+    },
     "stats": {
       "statsHeader": "Estadísticas",
       "totalSessions": "Sesiones Totales"
+    },
+    "insights": {
+      "plateauBadge": "Meseta",
+      "gainingBadge": "Progreso",
+      "losingBadge": "Declive",
+      "insufficientBadge": "Nuevo",
+      "inactiveBadge": "Inactivo",
+      "maintainingBadge": "Manteniendo",
+      "plateau": "Tu serie máxima se ha mantenido alrededor de {weight}kg por {repsMin}-{repsMax} reps. ¡Intenta agregar más peso o reps!",
+      "gaining": "¡Has aumentado {weightChange}kg o {repsChange} reps en tus últimas sesiones!",
+      "losing": "Rendimiento disminuyó {weightChange}kg o {repsChange} reps. Considera descanso o revisar técnica.",
+      "insufficient": "Datos insuficientes aún. Se necesitan al menos {needed} sesiones, actualmente tienes {sessions}.",
+      "inactive": "No entrenado en {days} días. ¡Reanuda el entrenamiento para seguir tu progreso!",
+      "maintaining": "Rendimiento estable. Estás manteniendo tu nivel de fuerza actual."
     },
     "graphs": {
       "maxWeight": "Peso Máx. (A lo Largo del Tiempo)",
@@ -124,6 +160,12 @@
       "title": "Idioma",
       "description": "Selecciona tu idioma preferido"
     },
+    "dateTimeFormat": {
+      "title": "Formatos de Fecha y Hora",
+      "description": "Personaliza cómo se muestran las fechas y horas",
+      "dateFormat": "Formato de Fecha",
+      "graphAxisFormat": "Formato de Eje de Gráfico"
+    },
     "dataManagement": {
       "title": "Gestión de Datos",
       "description": "Ver información sobre tu fuente de datos",
@@ -150,6 +192,12 @@
     "saturday": "Sábado",
     "sunday": "Domingo",
     "day": "Día",
+    "arms": "Brazos",
+    "back": "Espalda",
+    "chest": "Pecho",
+    "core": "Núcleo",
+    "legs": "Piernas",
+    "shoulders": "Hombros",
     "pagination": {
       "first": "Primera",
       "previous": "Anterior",
@@ -170,6 +218,13 @@
       "last3Months": "Últimos 3 Meses",
       "last6Months": "Últimos 6 Meses",
       "last12Months": "Últimos 12 Meses"
+    },
+    "footer": {
+      "contact": "Contáctame",
+      "donate": "Invítame a un café",
+      "github": "Dale una estrella en GitHub",
+      "bugReport": "Reportar un error",
+      "madeBy": "Hecho con ❤️ por {author}"
     }
   }
 }

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useHevyCache } from "../stores/hevy_cache";
 import { calculateCSVStats, calculatePRsGrouped, calculateMuscleDistribution } from "../utils/csvCalculator";
-import { Line, Doughnut, Radar } from "vue-chartjs";
+import { Line, Doughnut, Radar, Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   RadialLinearScale,
   Title,
@@ -21,6 +23,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   ArcElement,
   RadialLinearScale,
   Title,
@@ -29,11 +32,28 @@ ChartJS.register(
 );
 
 const store = useHevyCache();
+const router = useRouter();
 const chartData = ref<any>(null);
 
 const loading = computed(() => store.isLoadingWorkouts || store.isLoadingUser);
 const userAccount = computed(() => store.userAccount);
 const workouts = computed(() => store.workouts);
+
+// Collapsible sections state (saved to localStorage)
+const expandedSections = ref<Record<string, boolean>>({
+  plateaus: true, // Plateaus expanded by default
+  prs: false, // PRs collapsed by default
+  trainingAnalytics: JSON.parse(localStorage.getItem("dashboard-section-trainingAnalytics") || "true"),
+  exerciseInsights: JSON.parse(localStorage.getItem("dashboard-section-exerciseInsights") || "true"),
+  calendarViews: JSON.parse(localStorage.getItem("dashboard-section-calendarViews") || "true"),
+  muscleDistribution: JSON.parse(localStorage.getItem("dashboard-section-muscleDistribution") || "true"),
+});
+
+// Toggle section and save to localStorage
+function toggleSection(section: string) {
+  expandedSections.value[section] = !expandedSections.value[section];
+  localStorage.setItem(`dashboard-section-${section}`, JSON.stringify(expandedSections.value[section]));
+}
 
 // CSV mode stats calculation
 const csvStats = computed(() => {
@@ -45,10 +65,10 @@ const csvStats = computed(() => {
 
 // Get theme colors from CSS variables
 const primaryColor = computed(() => {
-  return getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#10b981';
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-primary").trim() || "#10b981";
 });
 const secondaryColor = computed(() => {
-  return getComputedStyle(document.documentElement).getPropertyValue('--color-secondary').trim() || '#06b6d4';
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-secondary").trim() || "#06b6d4";
 });
 
 // ---------- Individual Chart Range Filters ----------
@@ -68,6 +88,7 @@ const prsOverTime_Range = ref<Range>("6m");
 const prsOverTime_Display = ref<DisplayStyle>("mo");
 
 const muscleDistribution_Range = ref<Range>("all");
+const muscleDistribution_Grouping = ref<"groups" | "muscles">("groups");
   
 // ---------- Helper functions for date keys ----------
 
@@ -86,6 +107,45 @@ const weekKey = (d: Date) => {
 const monthKey = (d: Date) => {
   return d.toISOString().slice(0,7); // "YYYY-MM"
 };
+
+// Map individual muscles to larger groups
+function groupMuscles(muscleGroup: string): string {
+  const muscle = muscleGroup.toLowerCase();
+  
+  // Arms
+  if (muscle.includes("bicep") || muscle.includes("tricep") || muscle.includes("forearm")) {
+    return "Arms";
+  }
+  
+  // Back
+  if (muscle.includes("back") || muscle.includes("lat") || muscle.includes("rhomboid") || muscle.includes("trap")) {
+    return "Back";
+  }
+  
+  // Chest
+  if (muscle.includes("chest") || muscle.includes("pec")) {
+    return "Chest";
+  }
+  
+  // Core
+  if (muscle.includes("abdominal") || muscle.includes("core") || muscle.includes("oblique")) {
+    return "Core";
+  }
+  
+  // Legs
+  if (muscle.includes("quad") || muscle.includes("hamstring") || muscle.includes("glute") || 
+      muscle.includes("calves") || muscle.includes("leg") || muscle.includes("adductor") || muscle.includes("abductor")) {
+    return "Legs";
+  }
+  
+  // Shoulders
+  if (muscle.includes("shoulder") || muscle.includes("delt")) {
+    return "Shoulders";
+  }
+  
+  // Default: return original
+  return muscleGroup;
+}
 
 // Get calendar week number (ISO 8601)
 const getWeekNumber = (d: Date): number => {
@@ -195,7 +255,7 @@ const prsOverTime_Data = computed(() => {
   // CSV mode - calculate PRs with filtering
   if (store.isCSVMode) {
     // Use centralized PR calculation from csvCalculator
-    prMap = calculatePRsGrouped(filtered as any, useWeeks ? 'week' : 'month');
+    prMap = calculatePRsGrouped(filtered as any, useWeeks ? "week" : "month");
   } else {
     // API mode - count actual PRs from API data
     for (const w of filtered) {
@@ -264,7 +324,9 @@ const muscleDistribution_Data = computed(() => {
   
   for (const w of filtered) {
     for (const ex of (w.exercises || [])) {
-      const muscleGroup = ex.muscle_group || "Unknown";
+      const rawMuscle = ex.muscle_group || "Unknown";
+      // Apply grouping based on filter setting
+      const muscleGroup = muscleDistribution_Grouping.value === "groups" ? groupMuscles(rawMuscle) : rawMuscle;
       const setsCount = ex.sets?.length || 0;
       muscleGroups[muscleGroup] = (muscleGroups[muscleGroup] || 0) + setsCount;
     }
@@ -273,6 +335,59 @@ const muscleDistribution_Data = computed(() => {
   return {
     labels: Object.keys(muscleGroups),
     data: Object.values(muscleGroups)
+  };
+});
+
+// Muscle Regions (Stacked Bar Chart)
+const muscleRegions_Range = ref<Range>("1y");
+const muscleRegions_Display = ref<DisplayStyle>("mo");
+const muscleRegions_Grouping = ref<"groups" | "muscles">("groups");
+
+const muscleRegions_Data = computed(() => {
+  const filtered = filterByRange(muscleRegions_Range.value);
+  const useWeeks = muscleRegions_Display.value === "wk";
+  
+  // Group by week or month and muscle group
+  const periodMuscleData: Record<string, Record<string, number>> = {};
+  const allMuscles = new Set<string>();
+  
+  for (const w of filtered) {
+    const date = new Date((w.start_time || 0) * 1000);
+    const period = useWeeks ? weekKey(date) : monthKey(date);
+    
+    if (!periodMuscleData[period]) {
+      periodMuscleData[period] = {};
+    }
+    
+    for (const ex of (w.exercises || [])) {
+      const rawMuscle = ex.muscle_group || "Unknown";
+      // Apply grouping based on filter setting
+      const muscleGroup = muscleRegions_Grouping.value === "groups" ? groupMuscles(rawMuscle) : rawMuscle;
+      allMuscles.add(muscleGroup);
+      const setsCount = ex.sets?.length || 0;
+      periodMuscleData[period][muscleGroup] = (periodMuscleData[period][muscleGroup] || 0) + setsCount;
+    }
+  }
+  
+  // Sort periods
+  const periods = Object.keys(periodMuscleData).sort();
+  const muscleGroups = Array.from(allMuscles).sort();
+  
+  // Create datasets for each muscle group
+  const datasets = muscleGroups.map((muscle, index) => {
+    const colors = generateGradientColors(muscleGroups.length);
+    return {
+      label: muscle,
+      data: periods.map(period => (periodMuscleData[period] || {})[muscle] || 0),
+      backgroundColor: colors[index],
+      borderColor: colors[index],
+      borderWidth: 1
+    };
+  });
+  
+  return {
+    labels: periods.map(p => formatPeriodLabel(p, muscleRegions_Display.value)),
+    datasets
   };
 });
 
@@ -346,6 +461,163 @@ const totalMinutesAll = computed(() => {
   return mins;
 });
 const totalHoursAll = computed(() => Number((totalMinutesAll.value / 60).toFixed(2)));
+
+// Get exercises with plateaus - show most recent 5
+const plateauExercises = computed(() => {
+  const locale = localStorage.getItem("language") || "en";
+  
+  // Build exercise map similar to Exercises.vue
+  const exerciseMap: Record<string, any> = {};
+  
+  for (const w of workouts.value) {
+    const date = new Date((w.start_time || 0) * 1000);
+    const dayKey = date.toISOString().slice(0,10);
+    
+    for (const ex of (w.exercises || [])) {
+      const title = ex.title || "Unknown Exercise";
+      const id = String(title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      
+      const entry = (exerciseMap[id] ||= {
+        id,
+        title,
+        de_title: ex.de_title,
+        es_title: ex.es_title,
+        lastDay: null,
+        byDay: {} as Record<string, { maxWeight: number; repsAtMax: number }>,
+      });
+      
+      // Track by day
+      if (!entry.byDay[dayKey]) {
+        entry.byDay[dayKey] = { maxWeight: 0, repsAtMax: 0 };
+      }
+      
+      for (const s of (ex.sets || [])) {
+        const weight = Number((s as any).weight_kg ?? (s as any).weight ?? 0);
+        const reps = Number((s as any).reps ?? 0);
+        
+        if (weight > entry.byDay[dayKey].maxWeight) {
+          entry.byDay[dayKey].maxWeight = weight;
+          entry.byDay[dayKey].repsAtMax = reps;
+        } else if (weight === entry.byDay[dayKey].maxWeight) {
+          entry.byDay[dayKey].repsAtMax = Math.max(entry.byDay[dayKey].repsAtMax, reps);
+        }
+      }
+    }
+  }
+  
+  // Analyze each exercise for plateau
+  const plateaus: Array<{ id: string; title: string; localizedTitle: string; lastDay: string; avgWeight: number; avgReps: number }> = [];
+  
+  for (const ex of Object.values(exerciseMap)) {
+    const days = Object.keys(ex.byDay).sort();
+    if (days.length < 5) continue;
+    
+    // Check if active (trained in last 60 days)
+    const lastDay = days[days.length - 1];
+    if (!lastDay) continue;
+    
+    const lastDate = new Date(lastDay);
+    const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSince > 60) continue;
+    
+    // Get last 5 sessions
+    const last5Days = days.slice(-5);
+    const sessions = last5Days.map(d => ({
+      day: d,
+      maxWeight: ex.byDay[d]?.maxWeight || 0,
+      repsAtMax: ex.byDay[d]?.repsAtMax || 0,
+    }));
+    
+    const weights = sessions.map(s => s.maxWeight);
+    const reps = sessions.map(s => s.repsAtMax);
+    const weightRange = Math.max(...weights) - Math.min(...weights);
+    const repsRange = Math.max(...reps) - Math.min(...reps);
+    const avgWeight = weights.reduce((a, b) => a + b, 0) / weights.length;
+    const avgReps = Math.round(reps.reduce((a, b) => a + b, 0) / reps.length);
+    
+    // Get localized title
+    let localizedTitle = ex.title;
+    if (locale === "de" && ex.de_title) {
+      localizedTitle = ex.de_title;
+    } else if (locale === "es" && ex.es_title) {
+      localizedTitle = ex.es_title;
+    }
+    
+    // Plateau detection: weight within 0.5kg and reps within 1
+    if (weightRange <= 0.5 && repsRange <= 1) {
+      plateaus.push({
+        id: ex.id,
+        title: ex.title,
+        localizedTitle,
+        lastDay,
+        avgWeight,
+        avgReps
+      });
+    }
+  }
+  
+  // Sort by most recent first, return top 5
+  return plateaus
+    .sort((a, b) => new Date(b.lastDay).getTime() - new Date(a.lastDay).getTime())
+    .slice(0, 5);
+});
+
+// Get recent PRs - show last 5 PRs achieved
+const recentPRs = computed(() => {
+  const prsMap = new Map<string, { exercise: string; type: string; value: number; date: string }>();
+  
+  for (const w of workouts.value) {
+    const date = new Date((w.start_time || 0) * 1000);
+    const dateStr = date.toISOString().slice(0, 10); // TODO: Use localized date settings from Settings.vue
+    
+    for (const ex of (w.exercises || [])) {
+      const exerciseName = ex.title || "Unknown Exercise";
+      
+      for (const s of (ex.sets || [])) {
+        const prsArr = Array.isArray(s?.prs) ? s.prs : (s?.prs ? [s.prs] : []);
+        const personalArr = Array.isArray(s?.personalRecords) ? s.personalRecords : (s?.personalRecords ? [s.personalRecords] : []);
+        
+        for (const pr of [...prsArr, ...personalArr].filter(Boolean)) {
+          const type = String(pr.type || '').replace(/_/g, ' ');
+          const value = pr.value || 0;
+          
+          // Create unique key: exercise + type + value to avoid duplicates
+          const key = `${exerciseName}-${type}-${value}`;
+          
+          // Only keep the most recent PR for each unique combination
+          const existing = prsMap.get(key);
+          if (!existing || new Date(dateStr) > new Date(existing.date)) {
+            prsMap.set(key, {
+              exercise: exerciseName,
+              type,
+              value,
+              date: dateStr
+            });
+          }
+        }
+      }
+    }
+  }
+  
+  // Convert map to array, sort by date (most recent first) and return top 5
+  return Array.from(prsMap.values())
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+});
+
+// Navigate to Exercises page and scroll to specific exercise
+const navigateToExercise = (localizedTitle: string) => {
+  // Generate ID from localized title (same logic as Exercises.vue)
+  const id = String(localizedTitle)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  
+  router.push({
+    name: "Exercises",
+    hash: `#${id}`
+  });
+};
 
 const fetchData = async () => {
   try {
@@ -554,337 +826,551 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
-      <p>{{ $t('global.loadingSpinnerText') }}</p>
+      <p>{{ $t("global.loadingSpinnerText") }}</p>
     </div>
 
     <!-- Main Content -->
     <div v-else class="dashboard-content">
-      <!-- Stats Grid -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon workout-icon">🏋️</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ totalWorkouts }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.totalWorkouts') }}</div>
-          </div>
+      <!-- KPI Cards - Compact 4-Column Layout -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon">🏋️</div>
+          <div class="kpi-value">{{ totalWorkouts }}</div>
+          <div class="kpi-label">{{ $t("dashboard.stats.totalWorkouts") }}</div>
         </div>
         
-        <div class="stat-card">
-          <div class="stat-icon volume-icon">💪</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ totalVolume.toLocaleString() }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.totalVolume') }}</div>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">💪</div>
+          <div class="kpi-value">{{ totalVolume.toLocaleString() }}</div>
+          <div class="kpi-label">{{ $t("dashboard.stats.totalVolume") }}</div>
         </div>
         
-        <div class="stat-card">
-          <div class="stat-icon avg-icon">📊</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ avgVolume.toLocaleString() }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.avgVolume') }}</div>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">⏳</div>
+          <div class="kpi-value">{{ totalHoursAll }}</div>
+          <div class="kpi-label">{{ $t("dashboard.stats.totalHoursTrained") }}</div>
         </div>
 
-        <div class="stat-card">
-          <div class="stat-icon">⏳</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ totalHoursAll }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.totalHoursTrained') }}</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">🔥</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ workoutStreakWeeks }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.workoutStreak') }}</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">🏆</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ mostTrainedExercise.name }}</div>
-            <div class="stat-label">{{ $t('dashboard.stats.mostTrainedExercise') }}</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">⏱️</div>
-          <div class="stat-content">
-            <div class="stat-value">{{ longestWorkout.minutes }} min</div>
-            <div class="stat-label">{{ $t('dashboard.stats.longestWorkout') }}</div>
-          </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🔥</div>
+          <div class="kpi-value">{{ workoutStreakWeeks }}</div>
+          <div class="kpi-label">{{ $t("dashboard.stats.workoutStreak") }}</div>
         </div>
       </div>
 
-      <!-- Charts Section - 2 Column Grid -->
-      <div class="charts-grid">
-        <!-- Hours Trained Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>⏳ {{ $t('dashboard.charts.hoursTrained') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.hoursTrainedDescription') }}</span>
-            </div>
-            <div class="chart-filters">
-              <div class="filter-group">
-                <button @click="hoursTrained_Range = 'all'" :class="['filter-btn', { active: hoursTrained_Range === 'all' }]" title="All Time">All</button>
-                <button @click="hoursTrained_Range = '1y'" :class="['filter-btn', { active: hoursTrained_Range === '1y' }]" title="1 Year">1Y</button>
-                <button @click="hoursTrained_Range = '6m'" :class="['filter-btn', { active: hoursTrained_Range === '6m' }]" title="6 Months">6M</button>
-                <button @click="hoursTrained_Range = '3m'" :class="['filter-btn', { active: hoursTrained_Range === '3m' }]" title="3 Months">3M</button>
-                <button @click="hoursTrained_Range = '1m'" :class="['filter-btn', { active: hoursTrained_Range === '1m' }]" title="1 Month">1M</button>
-              </div>
-              <div class="filter-group">
-                <button @click="hoursTrained_Display = 'mo'" :class="['filter-btn', { active: hoursTrained_Display === 'mo' }]" title="Monthly">Mo</button>
-                <button @click="hoursTrained_Display = 'wk'" :class="['filter-btn', { active: hoursTrained_Display === 'wk' }]" title="Weekly">Wk</button>
-              </div>
-            </div>
+      <!-- Plateau Alerts (if any) -->
+      <div v-if="plateauExercises.length > 0" class="dashboard-section plateau-section">
+        <div class="section-header" @click="toggleSection('plateaus')">
+          <div class="section-title">
+            <span class="section-icon">⏸️</span>
+            <h2>{{ $t("dashboard.sections.plateausDetected", { count: plateauExercises.length }) }}</h2>
           </div>
-          <div class="chart-body">
-            <Line 
-              :key="'hours-' + hoursTrained_Range" 
-              :data="{ 
-                labels: hoursTrained_Data.labels, 
-                datasets: [{ 
-                  label: $t('global.hours'), 
-                  data: hoursTrained_Data.data, 
-                  borderColor: primaryColor, 
-                  backgroundColor: primaryColor + '33', 
-                  fill: true, 
-                  tension: 0.4,
-                  borderWidth: 2,
-                  pointRadius: 3,
-                  pointHoverRadius: 5
-                }] 
-              }" 
-              :options="chartOptions" 
-            />
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.plateaus ? '▼' : '▶' }}</span>
           </div>
         </div>
+        <transition name="expand">
+          <div v-if="expandedSections.plateaus" class="section-content">
+            <div class="plateau-grid">
+              <div 
+                v-for="plateau in plateauExercises" 
+                :key="plateau.id"
+                class="plateau-card"
+                @click="navigateToExercise(plateau.localizedTitle)"
+              >
+                <div class="plateau-icon">⏸️</div>
+                <div class="plateau-content">
+                  <div class="plateau-title">{{ plateau.localizedTitle }}</div>
+                  <div class="plateau-meta">{{ plateau.avgWeight.toFixed(1) }} kg × {{ plateau.avgReps }} reps</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
 
-        <!-- Volume Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>💪 {{ $t('dashboard.charts.volumeProgression') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.volumeProgressionDescription') }}</span>
-            </div>
-            <div class="chart-filters">
-              <div class="filter-group">
-                <button @click="volumeProgression_Range = 'all'" :class="['filter-btn', { active: volumeProgression_Range === 'all' }]" title="All Time">All</button>
-                <button @click="volumeProgression_Range = '1y'" :class="['filter-btn', { active: volumeProgression_Range === '1y' }]" title="1 Year">1Y</button>
-                <button @click="volumeProgression_Range = '6m'" :class="['filter-btn', { active: volumeProgression_Range === '6m' }]" title="6 Months">6M</button>
-                <button @click="volumeProgression_Range = '3m'" :class="['filter-btn', { active: volumeProgression_Range === '3m' }]" title="3 Months">3M</button>
-                <button @click="volumeProgression_Range = '1m'" :class="['filter-btn', { active: volumeProgression_Range === '1m' }]" title="1 Month">1M</button>
-              </div>
-              <div class="filter-group">
-                <button @click="volumeProgression_Display = 'mo'" :class="['filter-btn', { active: volumeProgression_Display === 'mo' }]" title="Monthly">Mo</button>
-                <button @click="volumeProgression_Display = 'wk'" :class="['filter-btn', { active: volumeProgression_Display === 'wk' }]" title="Weekly">Wk</button>
-              </div>
-            </div>
+      <!-- Recent PRs Section -->
+      <div v-if="recentPRs.length > 0" class="dashboard-section pr-section">
+        <div class="section-header" @click="toggleSection('prs')">
+          <div class="section-title">
+            <span class="section-icon">🏆</span>
+            <h2>{{ $t("dashboard.sections.recentPRs", { count: recentPRs.length }) }}</h2>
           </div>
-          <div class="chart-body">
-            <Line 
-              :key="'volume-' + volumeProgression_Range" 
-              :data="{ 
-                labels: volumeProgression_Data.labels, 
-                datasets: [{ 
-                  label: $t('global.volume') + ' (kg)', 
-                  data: volumeProgression_Data.data, 
-                  borderColor: secondaryColor, 
-                  backgroundColor: secondaryColor + '33', 
-                  fill: true, 
-                  tension: 0.4,
-                  borderWidth: 2,
-                  pointRadius: 3,
-                  pointHoverRadius: 5
-                }] 
-              }" 
-              :options="chartOptions" 
-            />
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.prs ? '▼' : '▶' }}</span>
           </div>
         </div>
+        <transition name="expand">
+          <div v-if="expandedSections.prs" class="section-content">
+            <div class="pr-grid">
+              <div 
+                v-for="(pr, index) in recentPRs" 
+                :key="index"
+                class="pr-card"
+              >
+                <div class="pr-icon">🏆</div>
+                <div class="pr-content">
+                  <div class="pr-exercise">{{ pr.exercise }}</div>
+                  <div class="pr-type">{{ pr.type }}</div>
+                  <div class="pr-value">{{ pr.value }}</div>
+                </div>
+                <div class="pr-date">{{ new Date(pr.date).toLocaleDateString() }}</div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
 
-        <!-- Reps/Sets Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>📊 {{ $t('dashboard.charts.repsAndSets') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.repsAndSetsDescription') }}</span>
-            </div>
-            <div class="chart-filters">
-              <div class="filter-group">
-                <button @click="repsAndSets_Range = 'all'" :class="['filter-btn', { active: repsAndSets_Range === 'all' }]" title="All Time">All</button>
-                <button @click="repsAndSets_Range = '1y'" :class="['filter-btn', { active: repsAndSets_Range === '1y' }]" title="1 Year">1Y</button>
-                <button @click="repsAndSets_Range = '6m'" :class="['filter-btn', { active: repsAndSets_Range === '6m' }]" title="6 Months">6M</button>
-                <button @click="repsAndSets_Range = '3m'" :class="['filter-btn', { active: repsAndSets_Range === '3m' }]" title="3 Months">3M</button>
-                <button @click="repsAndSets_Range = '1m'" :class="['filter-btn', { active: repsAndSets_Range === '1m' }]" title="1 Month">1M</button>
-              </div>
-              <div class="filter-group">
-                <button @click="repsAndSets_Display = 'mo'" :class="['filter-btn', { active: repsAndSets_Display === 'mo' }]" title="Monthly">Mo</button>
-                <button @click="repsAndSets_Display = 'wk'" :class="['filter-btn', { active: repsAndSets_Display === 'wk' }]" title="Weekly">Wk</button>
-              </div>
-            </div>
+      <!-- Training Analytics Section (Expandable) -->
+      <div class="dashboard-section">
+        <div class="section-header" @click="toggleSection('trainingAnalytics')">
+          <div class="section-title">
+            <span class="section-icon">📊</span>
+            <h2>{{ $t("dashboard.sections.trainingAnalysis") }}</h2>
           </div>
-          <div class="chart-body">
-            <Line 
-              :key="'rs-' + repsAndSets_Range" 
-              :data="{ 
-                labels: repsAndSets_Data.labels, 
-                datasets: [
-                  { 
-                    label: 'Reps', 
-                    data: repsAndSets_Data.reps, 
-                    borderColor: primaryColor, 
-                    backgroundColor: primaryColor + '26', 
-                    fill: true, 
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
-                  },
-                  { 
-                    label: 'Sets', 
-                    data: repsAndSets_Data.sets, 
-                    borderColor: secondaryColor, 
-                    backgroundColor: secondaryColor + '26', 
-                    fill: true, 
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
-                  }
-                ] 
-              }" 
-              :options="{ 
-                ...chartOptions, 
-                plugins: { 
-                  ...chartOptions.plugins, 
-                  legend: { 
-                    display: true, 
-                    position: 'top' as const,
-                    labels: { 
-                      color: '#94a3b8', 
-                      font: { size: 11 },
-                      usePointStyle: true,
-                      boxWidth: 6,
-                      boxHeight: 6,
-                      padding: 15
-                    } 
-                  } 
-                } 
-              }" 
-            />
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.trainingAnalytics ? "▼" : "▶" }}</span>
           </div>
         </div>
+        <transition name="expand">
+          <div v-if="expandedSections.trainingAnalytics" class="section-content">
+            <div class="charts-grid">
+              <!-- Hours Trained Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>⏳ {{ $t("dashboard.charts.hoursTrained") }}</h3>
+                    <span class="chart-subtitle">{{ $t("dashboard.charts.hoursTrainedDescription") }}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="hoursTrained_Range = 'all'" :class="['filter-btn', { active: hoursTrained_Range === 'all' }]" title="All Time">All</button>
+                      <button @click="hoursTrained_Range = '1y'" :class="['filter-btn', { active: hoursTrained_Range === '1y' }]" title="1 Year">1Y</button>
+                      <button @click="hoursTrained_Range = '6m'" :class="['filter-btn', { active: hoursTrained_Range === '6m' }]" title="6 Months">6M</button>
+                      <button @click="hoursTrained_Range = '3m'" :class="['filter-btn', { active: hoursTrained_Range === '3m' }]" title="3 Months">3M</button>
+                      <button @click="hoursTrained_Range = '1m'" :class="['filter-btn', { active: hoursTrained_Range === '1m' }]" title="1 Month">1M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="hoursTrained_Display = 'mo'" :class="['filter-btn', { active: hoursTrained_Display === 'mo' }]" title="Monthly">Mo</button>
+                      <button @click="hoursTrained_Display = 'wk'" :class="['filter-btn', { active: hoursTrained_Display === 'wk' }]" title="Weekly">Wk</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Line 
+                    :key="'hours-' + hoursTrained_Range" 
+                    :data="{ 
+                      labels: hoursTrained_Data.labels, 
+                      datasets: [{ 
+                        label: $t('global.hours'), 
+                        data: hoursTrained_Data.data, 
+                        borderColor: primaryColor, 
+                        backgroundColor: primaryColor + '33', 
+                        fill: true, 
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                      }] 
+                    }" 
+                    :options="chartOptions" 
+                  />
+                </div>
+              </div>
 
-        <!-- PRs Over Time Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>🏆 {{ $t('dashboard.charts.PRsOverTime') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.PRsOverTimeDescription') }}</span>
-            </div>
-            <div class="chart-filters">
-              <div class="filter-group">
-                <button @click="prsOverTime_Range = 'all'" :class="['filter-btn', { active: prsOverTime_Range === 'all' }]" title="All Time">All</button>
-                <button @click="prsOverTime_Range = '1y'" :class="['filter-btn', { active: prsOverTime_Range === '1y' }]" title="1 Year">1Y</button>
-                <button @click="prsOverTime_Range = '6m'" :class="['filter-btn', { active: prsOverTime_Range === '6m' }]" title="6 Months">6M</button>
-                <button @click="prsOverTime_Range = '3m'" :class="['filter-btn', { active: prsOverTime_Range === '3m' }]" title="3 Months">3M</button>
-                <button @click="prsOverTime_Range = '1m'" :class="['filter-btn', { active: prsOverTime_Range === '1m' }]" title="1 Month">1M</button>
+              <!-- Volume Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>💪 {{ $t('dashboard.charts.volumeProgression') }}</h3>
+                    <span class="chart-subtitle">{{ $t('dashboard.charts.volumeProgressionDescription') }}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="volumeProgression_Range = 'all'" :class="['filter-btn', { active: volumeProgression_Range === 'all' }]">All</button>
+                      <button @click="volumeProgression_Range = '1y'" :class="['filter-btn', { active: volumeProgression_Range === '1y' }]">1Y</button>
+                      <button @click="volumeProgression_Range = '6m'" :class="['filter-btn', { active: volumeProgression_Range === '6m' }]">6M</button>
+                      <button @click="volumeProgression_Range = '3m'" :class="['filter-btn', { active: volumeProgression_Range === '3m' }]">3M</button>
+                      <button @click="volumeProgression_Range = '1m'" :class="['filter-btn', { active: volumeProgression_Range === '1m' }]">1M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="volumeProgression_Display = 'mo'" :class="['filter-btn', { active: volumeProgression_Display === 'mo' }]">Mo</button>
+                      <button @click="volumeProgression_Display = 'wk'" :class="['filter-btn', { active: volumeProgression_Display === 'wk' }]">Wk</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Line 
+                    :key="'volume-' + volumeProgression_Range" 
+                    :data="{ 
+                      labels: volumeProgression_Data.labels, 
+                      datasets: [{ 
+                        label: $t('global.volume') + ' (kg)', 
+                        data: volumeProgression_Data.data, 
+                        borderColor: secondaryColor, 
+                        backgroundColor: secondaryColor + '33', 
+                        fill: true, 
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                      }] 
+                    }" 
+                    :options="chartOptions" 
+                  />
+                </div>
               </div>
-              <div class="filter-group">
-                <button @click="prsOverTime_Display = 'mo'" :class="['filter-btn', { active: prsOverTime_Display === 'mo' }]" title="Monthly">Mo</button>
-                <button @click="prsOverTime_Display = 'wk'" :class="['filter-btn', { active: prsOverTime_Display === 'wk' }]" title="Weekly">Wk</button>
-              </div>
-            </div>
-          </div>
-          <div class="chart-body">
-            <Line 
-              :key="'prs-' + prsOverTime_Range" 
-              :data="{ 
-                labels: prsOverTime_Data.labels, 
-                datasets: [{ 
-                  label: 'PRs', 
-                  data: prsOverTime_Data.data, 
-                  borderColor: primaryColor, 
-                  backgroundColor: primaryColor + '33', 
-                  fill: true, 
-                  tension: 0.4,
-                  borderWidth: 3,
-                  pointRadius: 4,
-                  pointHoverRadius: 6,
-                  pointBackgroundColor: primaryColor
-                }] 
-              }" 
-              :options="chartOptions" 
-            />
-          </div>
-        </div>
 
-        <!-- Weekly Rhythm Radar Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>🔥 {{ $t('dashboard.charts.weeklyRhythm') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.weeklyRhythmDescription') }}</span>
-            </div>
-          </div>
-          <div class="chart-body radar-body">
-            <Radar 
-              :data="{ 
-                labels: weeklyRhythm_Data.labels, 
-                datasets: [{ 
-                  label: 'Workouts', 
-                  data: weeklyRhythm_Data.data, 
-                  borderColor: secondaryColor, 
-                  backgroundColor: secondaryColor + '66', 
-                  borderWidth: 3,
-                  pointRadius: 4,
-                  pointHoverRadius: 6,
-                  pointBackgroundColor: secondaryColor,
-                  pointBorderColor: '#fff',
-                  pointBorderWidth: 2
-                }] 
-              }" 
-              :options="radarOptions" 
-            />
-          </div>
-        </div>
+              <!-- Reps/Sets Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>📊 {{ $t('dashboard.charts.repsAndSets') }}</h3>
+                    <span class="chart-subtitle">{{ $t('dashboard.charts.repsAndSetsDescription') }}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="repsAndSets_Range = 'all'" :class="['filter-btn', { active: repsAndSets_Range === 'all' }]">All</button>
+                      <button @click="repsAndSets_Range = '1y'" :class="['filter-btn', { active: repsAndSets_Range === '1y' }]">1Y</button>
+                      <button @click="repsAndSets_Range = '6m'" :class="['filter-btn', { active: repsAndSets_Range === '6m' }]">6M</button>
+                      <button @click="repsAndSets_Range = '3m'" :class="['filter-btn', { active: repsAndSets_Range === '3m' }]">3M</button>
+                      <button @click="repsAndSets_Range = '1m'" :class="['filter-btn', { active: repsAndSets_Range === '1m' }]">1M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="repsAndSets_Display = 'mo'" :class="['filter-btn', { active: repsAndSets_Display === 'mo' }]">Mo</button>
+                      <button @click="repsAndSets_Display = 'wk'" :class="['filter-btn', { active: repsAndSets_Display === 'wk' }]">Wk</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Line 
+                    :key="'rs-' + repsAndSets_Range" 
+                    :data="{ 
+                      labels: repsAndSets_Data.labels, 
+                      datasets: [
+                        { 
+                          label: 'Reps', 
+                          data: repsAndSets_Data.reps, 
+                          borderColor: primaryColor, 
+                          backgroundColor: primaryColor + '26', 
+                          fill: true, 
+                          tension: 0.4,
+                          borderWidth: 2,
+                          pointRadius: 3,
+                          pointHoverRadius: 5
+                        },
+                        { 
+                          label: 'Sets', 
+                          data: repsAndSets_Data.sets, 
+                          borderColor: secondaryColor, 
+                          backgroundColor: secondaryColor + '26', 
+                          fill: true, 
+                          tension: 0.4,
+                          borderWidth: 2,
+                          pointRadius: 3,
+                          pointHoverRadius: 5
+                        }
+                      ] 
+                    }" 
+                    :options="{ 
+                      ...chartOptions, 
+                      plugins: { 
+                        ...chartOptions.plugins, 
+                        legend: { 
+                          display: true, 
+                          position: 'top' as const,
+                          labels: { 
+                            color: '#94a3b8', 
+                            font: { size: 11 },
+                            usePointStyle: true,
+                            boxWidth: 6,
+                            boxHeight: 6,
+                            padding: 15
+                          } 
+                        } 
+                      } 
+                    }" 
+                  />
+                </div>
+              </div>
 
-        <!-- Muscle Distribution Chart -->
-        <div class="chart-container">
-          <div class="chart-header">
-            <div class="chart-title-section">
-              <h2>🎯 {{ $t('dashboard.charts.muscleDistribution') }}</h2>
-              <span class="chart-subtitle">{{ $t('dashboard.charts.muscleDistributionDescription') }}</span>
-            </div>
-            <div class="chart-filters">
-              <div class="filter-group">
-                <button @click="muscleDistribution_Range = 'all'" :class="['filter-btn', { active: muscleDistribution_Range === 'all' }]" title="All Time">All</button>
-                <button @click="muscleDistribution_Range = '1y'" :class="['filter-btn', { active: muscleDistribution_Range === '1y' }]" title="1 Year">1Y</button>
-                <button @click="muscleDistribution_Range = '6m'" :class="['filter-btn', { active: muscleDistribution_Range === '6m' }]" title="6 Months">6M</button>
-                <button @click="muscleDistribution_Range = '3m'" :class="['filter-btn', { active: muscleDistribution_Range === '3m' }]" title="3 Months">3M</button>
-                <button @click="muscleDistribution_Range = '1m'" :class="['filter-btn', { active: muscleDistribution_Range === '1m' }]" title="1 Month">1M</button>
+              <!-- PRs Over Time Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>🏆 {{ $t('dashboard.charts.PRsOverTime') }}</h3>
+                    <span class="chart-subtitle">{{ $t('dashboard.charts.PRsOverTimeDescription') }}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="prsOverTime_Range = 'all'" :class="['filter-btn', { active: prsOverTime_Range === 'all' }]">All</button>
+                      <button @click="prsOverTime_Range = '1y'" :class="['filter-btn', { active: prsOverTime_Range === '1y' }]">1Y</button>
+                      <button @click="prsOverTime_Range = '6m'" :class="['filter-btn', { active: prsOverTime_Range === '6m' }]">6M</button>
+                      <button @click="prsOverTime_Range = '3m'" :class="['filter-btn', { active: prsOverTime_Range === '3m' }]">3M</button>
+                      <button @click="prsOverTime_Range = '1m'" :class="['filter-btn', { active: prsOverTime_Range === '1m' }]">1M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="prsOverTime_Display = 'mo'" :class="['filter-btn', { active: prsOverTime_Display === 'mo' }]">Mo</button>
+                      <button @click="prsOverTime_Display = 'wk'" :class="['filter-btn', { active: prsOverTime_Display === 'wk' }]">Wk</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Line 
+                    :key="'prs-' + prsOverTime_Range" 
+                    :data="{ 
+                      labels: prsOverTime_Data.labels, 
+                      datasets: [{ 
+                        label: 'PRs', 
+                        data: prsOverTime_Data.data, 
+                        borderColor: primaryColor, 
+                        backgroundColor: primaryColor + '33', 
+                        fill: true, 
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: primaryColor
+                      }] 
+                    }" 
+                    :options="chartOptions" 
+                  />
+                </div>
               </div>
             </div>
           </div>
-          <div class="chart-body doughnut-body">
-            <Doughnut 
-              :key="'muscle-' + muscleDistribution_Range"
-              :data="{
-                labels: muscleDistribution_Data.labels,
-                datasets: [{
-                  data: muscleDistribution_Data.data,
-                  backgroundColor: generateGradientColors(muscleDistribution_Data.data.length),
-                  borderWidth: 0,
-                }]
-              }" 
-              :options="doughnutOptions" 
-            />
+        </transition>
+      </div>
+
+      <!-- Exercise Insights Section -->
+      <div class="dashboard-section">
+        <div class="section-header" @click="toggleSection('exerciseInsights')">
+          <div class="section-title">
+            <span class="section-icon">🏆</span>
+            <h2>{{ $t("dashboard.sections.exerciseInsights") }}</h2>
+          </div>
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.exerciseInsights ? '▼' : '▶' }}</span>
           </div>
         </div>
+        <transition name="expand">
+          <div v-if="expandedSections.exerciseInsights" class="section-content">
+            <div class="insights-grid">
+              <!-- Most Trained Exercise Widget -->
+              <div class="insight-card">
+                <div class="insight-icon">🏆</div>
+                <div class="insight-content">
+                  <div class="insight-label">{{ $t('dashboard.stats.mostTrainedExercise') }}</div>
+                  <div class="insight-value">{{ mostTrainedExercise.name }}</div>
+                  <div class="insight-meta">{{ mostTrainedExercise.count }} sessions</div>
+                </div>
+              </div>
+
+              <!-- Longest Workout Widget -->
+              <div class="insight-card">
+                <div class="insight-icon">⏱️</div>
+                <div class="insight-content">
+                  <div class="insight-label">{{ $t('dashboard.stats.longestWorkout') }}</div>
+                  <div class="insight-value">{{ longestWorkout.minutes }} min</div>
+                </div>
+              </div>
+
+              <!-- Average Volume Widget -->
+              <div class="insight-card">
+                <div class="insight-icon">📊</div>
+                <div class="insight-content">
+                  <div class="insight-label">{{ $t('dashboard.stats.avgVolume') }}</div>
+                  <div class="insight-value">{{ avgVolume.toLocaleString() }} kg</div>
+                  <div class="insight-meta">per workout</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Calendar Views Section -->
+      <div class="dashboard-section">
+        <div class="section-header" @click="toggleSection('calendarViews')">
+          <div class="section-title">
+            <span class="section-icon">📅</span>
+            <h2>{{$t("dashboard.sections.calendarViews")}}</h2>
+          </div>
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.calendarViews ? '▼' : '▶' }}</span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSections.calendarViews" class="section-content">
+            <div class="charts-grid">
+              <!-- Weekly Rhythm Radar Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>🔥 {{$t('dashboard.charts.weeklyRhythm')}}</h3>
+                    <span class="chart-subtitle">{{$t('dashboard.charts.weeklyRhythmDescription')}}</span>
+                  </div>
+                </div>
+                <div class="chart-body radar-body">
+                  <Radar 
+                    :data="{ 
+                      labels: weeklyRhythm_Data.labels, 
+                      datasets: [{ 
+                        label: 'Workouts', 
+                        data: weeklyRhythm_Data.data, 
+                        borderColor: secondaryColor, 
+                        backgroundColor: secondaryColor + '66', 
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: secondaryColor,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                      }] 
+                    }" 
+                    :options="radarOptions" 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
+      <!-- Muscle Distribution Section -->
+      <div class="dashboard-section">
+        <div class="section-header" @click="toggleSection('muscleDistribution')">
+          <div class="section-title">
+            <span class="section-icon">💪</span>
+            <h2>{{$t("dashboard.sections.muscleDistribution")}}</h2>
+          </div>
+          <div class="section-toggle">
+            <span class="toggle-icon">{{ expandedSections.muscleDistribution ? '▼' : '▶' }}</span>
+          </div>
+        </div>
+        <transition name="expand">
+          <div v-if="expandedSections.muscleDistribution" class="section-content">
+            <div class="charts-grid">
+              <!-- Muscle Distribution Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>🎯 {{$t('dashboard.charts.muscleDistribution')}}</h3>
+                    <span class="chart-subtitle">{{$t('dashboard.charts.muscleDistributionDescription')}}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="muscleDistribution_Range = 'all'" :class="['filter-btn', { active: muscleDistribution_Range === 'all' }]">All</button>
+                      <button @click="muscleDistribution_Range = '1y'" :class="['filter-btn', { active: muscleDistribution_Range === '1y' }]">1Y</button>
+                      <button @click="muscleDistribution_Range = '6m'" :class="['filter-btn', { active: muscleDistribution_Range === '6m' }]">6M</button>
+                      <button @click="muscleDistribution_Range = '3m'" :class="['filter-btn', { active: muscleDistribution_Range === '3m' }]">3M</button>
+                      <button @click="muscleDistribution_Range = '1m'" :class="['filter-btn', { active: muscleDistribution_Range === '1m' }]">1M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="muscleDistribution_Grouping = 'groups'" :class="['filter-btn', { active: muscleDistribution_Grouping === 'groups' }]" title="Muscle Groups">Groups</button>
+                      <button @click="muscleDistribution_Grouping = 'muscles'" :class="['filter-btn', { active: muscleDistribution_Grouping === 'muscles' }]" title="Individual Muscles">Muscles</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body doughnut-body">
+                  <Doughnut 
+                    :key="'muscle-' + muscleDistribution_Range + '-' + muscleDistribution_Grouping"
+                    :data="{
+                      labels: muscleDistribution_Data.labels,
+                      datasets: [{
+                        data: muscleDistribution_Data.data,
+                        backgroundColor: generateGradientColors(muscleDistribution_Data.data.length),
+                        borderWidth: 0,
+                      }]
+                    }" 
+                    :options="doughnutOptions" 
+                  />
+                </div>
+              </div>
+              
+              <!-- Muscle Regions Chart -->
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-title-section">
+                    <h3>📊 {{ $t("dashboard.charts.muscleRegions") }}</h3>
+                    <span class="chart-subtitle">{{ $t("dashboard.charts.muscleRegionsDescription") }}</span>
+                  </div>
+                  <div class="chart-filters">
+                    <div class="filter-group">
+                      <button @click="muscleRegions_Range = 'all'" :class="['filter-btn', { active: muscleRegions_Range === 'all' }]">All</button>
+                      <button @click="muscleRegions_Range = '1y'" :class="['filter-btn', { active: muscleRegions_Range === '1y' }]">1Y</button>
+                      <button @click="muscleRegions_Range = '6m'" :class="['filter-btn', { active: muscleRegions_Range === '6m' }]">6M</button>
+                      <button @click="muscleRegions_Range = '3m'" :class="['filter-btn', { active: muscleRegions_Range === '3m' }]">3M</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="muscleRegions_Display = 'mo'" :class="['filter-btn', { active: muscleRegions_Display === 'mo' }]">Mo</button>
+                      <button @click="muscleRegions_Display = 'wk'" :class="['filter-btn', { active: muscleRegions_Display === 'wk' }]">Wk</button>
+                    </div>
+                    <div class="filter-group">
+                      <button @click="muscleRegions_Grouping = 'groups'" :class="['filter-btn', { active: muscleRegions_Grouping === 'groups' }]" title="Muscle Groups">Groups</button>
+                      <button @click="muscleRegions_Grouping = 'muscles'" :class="['filter-btn', { active: muscleRegions_Grouping === 'muscles' }]" title="Individual Muscles">Muscles</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="chart-body">
+                  <Bar
+                    :key="'muscle-regions-' + muscleRegions_Range + '-' + muscleRegions_Display + '-' + muscleRegions_Grouping"
+                    :data="muscleRegions_Data"
+                    :options="{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'index' as const,
+                        intersect: false
+                      },
+                      scales: {
+                        x: {
+                          stacked: true,
+                          grid: { display: false },
+                          ticks: { color: '#9A9A9A' }
+                        },
+                        y: {
+                          stacked: true,
+                          grid: { color: '#2b3553' },
+                          ticks: { color: '#9A9A9A' },
+                          title: {
+                            display: true,
+                            text: 'Sets',
+                            color: '#9A9A9A'
+                          }
+                        }
+                      },
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'bottom' as const,
+                          labels: {
+                            color: '#94a3b8',
+                            font: { size: 11 },
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 12
+                          }
+                        },
+                        tooltip: {
+                          mode: 'index' as const,
+                          intersect: false,
+                          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                          borderColor: 'rgba(51, 65, 85, 0.6)',
+                          borderWidth: 1,
+                          titleColor: '#f8fafc',
+                          bodyColor: '#cbd5e1',
+                          padding: 12,
+                          displayColors: true
+                        }
+                      }
+                    }"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
       </div>
     </div>
   </div>
@@ -1046,7 +1532,349 @@ onMounted(() => {
   margin: 0;
 }
 
-/* Stats Grid */
+/* KPI Cards - Compact 4-Column Layout */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary, #10b981);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
+}
+
+.kpi-icon {
+  font-size: 1.75rem;
+  opacity: 0.9;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Plateau Alert Section */
+.plateau-section {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.plateau-section .section-header {
+  background: rgba(251, 191, 36, 0.15);
+}
+
+.plateau-section .section-content {
+  background: rgba(251, 191, 36, 0.05);
+}
+
+.plateau-section .section-icon {
+  color: #fbbf24;
+}
+
+.plateau-section .section-title h2 {
+  color: #fbbf24;
+}
+
+.plateau-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.plateau-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.plateau-card:hover {
+  transform: translateY(-2px);
+  border-color: #fbbf24;
+  box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2);
+  background: rgba(15, 23, 42, 1);
+}
+
+.plateau-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.plateau-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.plateau-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plateau-meta {
+  font-size: 0.8rem;
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+/* PR Section Styles */
+.pr-section {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.pr-section .section-header {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.pr-section .section-content {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.pr-section .section-icon {
+  color: #10b981;
+}
+
+.pr-section .section-title h2 {
+  color: #10b981;
+}
+
+.pr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  max-width: 100%;
+}
+
+@media (min-width: 1200px) {
+  .pr-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.pr-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.pr-card:hover {
+  transform: translateY(-2px);
+  border-color: #10b981;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+  background: rgba(15, 23, 42, 1);
+}
+
+.pr-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.pr-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.pr-exercise {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pr-type {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: capitalize;
+  margin-bottom: 0.25rem;
+}
+
+.pr-value {
+  font-size: 0.85rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.pr-date {
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+/* Dashboard Sections (Expandable/Collapsible) */
+.dashboard-section {
+  margin-bottom: 1rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.section-header:hover {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.section-icon {
+  font-size: 1.25rem;
+}
+
+.section-title h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-icon {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+}
+
+.section-content {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.4);
+}
+
+/* Insights Grid (for Exercise Insights section) */
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.insight-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary, #10b981);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary, #10b981) 15%, transparent);
+}
+
+.insight-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.insight-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.insight-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.insight-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insight-meta {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.plateau-card {
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.plateau-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 12px 24px rgba(251, 191, 36, 0.2);
+}
+
+.plateau-card .insight-icon {
+  color: rgba(251, 191, 36, 0.9);
+}
+
+
+/* Stats Grid (Legacy - keeping for compatibility) */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1153,7 +1981,7 @@ onMounted(() => {
   min-width: 0;
 }
 
-.chart-header h2 {
+.chart-header h2, .chart-header h3 {
   margin: 0 0 0.25rem;
   color: #f8fafc;
   font-size: 1.125rem;
@@ -1253,14 +2081,30 @@ onMounted(() => {
     font-size: 1.875rem;
   }
   
+  /* Hide plateau/PR section titles when collapsible is active */
+  .plateau-section .plateau-section-title:not(),
+  .pr-section .pr-section-title:not() {
+    display: none;
+  }
+  
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  /* Reduce nesting padding on mobile for charts */
+  .section-content {
+    padding: 1rem 0.5rem;
+  }
+  
+  .chart-container {
+    border-radius: 12px;
   }
   
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
+    padding: 0.75rem 1rem;
   }
   
   .chart-filters {
@@ -1268,20 +2112,27 @@ onMounted(() => {
     justify-content: flex-end;
   }
   
+  /* Make filter buttons smaller to fit mo/wk on same line */
+  .filter-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
   .chart-body {
-    padding: 1rem 0.75rem;
-    min-height: 280px;
+    padding: 0.75rem 0.5rem;
+    min-height: 260px;
   }
   
   .doughnut-body,
   .radar-body {
-    min-height: 280px;
+    min-height: 260px;
+    padding: 1rem 0.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .dashboard {
-    padding: 1rem;
+    padding: 1rem 0.5rem;
   }
   
   .title-section h1 {
@@ -1308,8 +2159,33 @@ onMounted(() => {
     font-size: 1rem;
   }
   
+  /* Further reduce padding on smallest screens */
+  .section-content {
+    padding: 0.75rem 0.25rem;
+  }
+  
+  .chart-header {
+    padding: 0.5rem 0.75rem;
+  }
+  
   .chart-body {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem 0.25rem;
+    min-height: 240px;
+  }
+  
+  .doughnut-body,
+  .radar-body {
+    padding: 0.75rem 0.25rem;
+    min-height: 240px;
+  }
+  
+  /* Make KPI cards more compact */
+  .kpi-grid {
+    gap: 0.75rem;
+  }
+  
+  .kpi-card {
+    padding: 1rem 0.75rem;
   }
 }
 </style>

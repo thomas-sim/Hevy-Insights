@@ -46,6 +46,14 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Willkommen zurück",
+    "sections": {
+      "plateausDetected": "Plateau erkannt ({count})",
+      "recentPRs": "Kürzliche persönliche Rekorde ({count})",
+      "trainingAnalysis": "Trainingsanalyse",
+      "exerciseInsights": "Übungs-Insights",
+      "calendarViews": "Kalenderansichten",
+      "muscleDistribution": "Muskelverteilung"
+    },
     "stats": {
       "totalWorkouts": "Gesamte Trainings",
       "totalVolume": "Gesamtvolumen (kg)",
@@ -67,7 +75,9 @@
       "weeklyRhythm": "Wöchentlicher Rhythmus",
       "weeklyRhythmDescription": "Trainingshäufigkeit nach Wochentag",
       "muscleDistribution": "Muskelverteilung",
-      "muscleDistributionDescription": "Sätze nach Muskelgruppe"
+      "muscleDistributionDescription": "Sätze nach Muskelgruppe",
+      "muscleRegions": "Muskelregionen",
+      "muscleRegionsDescription": "Gestapelte Aufschlüsselung nach Zeitraum"
     }
   },
   "workouts": {
@@ -81,9 +91,35 @@
     "subtitle": "Detaillierte Analyse und Fortschrittsverfolgung für jede Übung.",
     "searchFilter": "Übungen nach Name suchen...",
     "personalRecords": "Persönliche Rekorde",
+    "neverTrained": "Nie trainiert",
+    "summary": {
+      "total": "Gesamt",
+      "active": "Aktiv"
+    },
+    "lastTrained": {
+      "today": "Heute trainiert",
+      "yesterday": "Gestern trainiert",
+      "daysAgo": "Vor {days} Tagen trainiert",
+      "weeksAgo": "Vor {weeks} Woche(n) trainiert",
+      "monthsAgo": "Vor {months} Monat(en) trainiert"
+    },
     "stats": {
       "statsHeader": "Statistiken",
       "totalSessions": "Gesamte Trainingseinheiten"
+    },
+    "insights": {
+      "plateauBadge": "Plateau",
+      "gainingBadge": "Fortschritt",
+      "losingBadge": "Rückgang",
+      "insufficientBadge": "Neu",
+      "inactiveBadge": "Inaktiv",
+      "maintainingBadge": "Stabil",
+      "plateau": "Ihr bester Satz liegt bei etwa {weight}kg für {repsMin}-{repsMax} Wdh. Versuchen Sie, mehr Gewicht oder Wiederholungen hinzuzufügen!",
+      "gaining": "Sie haben um {weightChange}kg oder {repsChange} Wdh. in den letzten Einheiten zugelegt!",
+      "losing": "Leistung sank um {weightChange}kg oder {repsChange} Wdh. Erwägen Sie Erholung oder Formüberprüfung.",
+      "insufficient": "Noch nicht genug Daten. Benötigt mindestens {needed} Einheiten, aktuell {sessions}.",
+      "inactive": "Seit {days} Tagen nicht trainiert. Nehmen Sie das Training wieder auf!",
+      "maintaining": "Leistung ist stabil. Sie halten Ihr aktuelles Kraftniveau."
     },
     "graphs": {
       "maxWeight": "Max. Gewicht (im Zeitverlauf)",
@@ -111,7 +147,7 @@
   },
   "settings": {
     "title": "Einstellungen",
-    "subtitle": "Passen Sie Ihr Hevy Insights-Erlebnis an.",
+    "subtitle": "Passen Sie Ihr Hevy Insights Erlebnis an.",
     "themes": {
       "title": "Farbthema",
       "description": "Wählen Sie Ihr bevorzugtes Farbschema für Diagramme und Akzente",
@@ -123,6 +159,12 @@
     "language": {
       "title": "Sprache",
       "description": "Wählen Sie Ihre bevorzugte Sprache"
+    },
+    "dateTimeFormat": {
+      "title": "Datums- & Zeitformate",
+      "description": "Passen Sie an, wie Datum und Uhrzeit angezeigt werden",
+      "dateFormat": "Datumsformat",
+      "graphAxisFormat": "Diagramm-Achsenformat"
     },
     "dataManagement": {
       "title": "Datenverwaltung",
@@ -150,6 +192,12 @@
     "saturday": "Samstag",
     "sunday": "Sonntag",
     "day": "Tag",
+    "arms": "Arme",
+    "back": "Rücken",
+    "chest": "Brust",
+    "core": "Kern",
+    "legs": "Beine",
+    "shoulders": "Schultern",
     "pagination": {
       "first": "Erste",
       "previous": "Zurück",
@@ -170,6 +218,13 @@
       "last3Months": "Letzte 3 Monate",
       "last6Months": "Letzte 6 Monate",
       "last12Months": "Letzte 12 Monate"
+    },
+    "footer": {
+      "contact": "Kontaktiere mich",
+      "donate": "Kauf mir einen Kaffee",
+      "github": "Stern auf GitHub",
+      "bugReport": "Fehler melden",
+      "madeBy": "Gemacht mit ❤️ von {author}"
     }
   }
 }
